@@ -61,7 +61,7 @@ std::vector<Token> tokenize(const std::string& str){
 
 std::string tokens_to_asm (const std:: vector<Token>& tokens){
     std::stringstream output ;
-    output << "global _start\nstart:\n";
+    output << "global _start\n_start:\n";
     for (size_t i = 0; i < tokens.size(); i++){
         const Token& token = tokens.at(i);
         if (token.type==TokenType::_return)
@@ -101,7 +101,13 @@ int main(int argc, char const *argv[])
     }
 
     std::vector<Token> tokens = tokenize(contents);
-    std::cout << tokens_to_asm(tokens) << std::endl; 
+    {
+        std::fstream file("../out.asm", std::ios::out);
+        file << tokens_to_asm(tokens);
+    } 
+
+    system("nasm -felf64 ../out.asm");
+    system("ld -o ../out ../out.o");
 
     return 0;
 }
