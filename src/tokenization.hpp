@@ -19,7 +19,7 @@ struct Token {
 class Tokenizer {
 public:
     inline explicit Tokenizer(const std::string& src)
-        : m_src() {}
+        : m_src(src) {}
 
     inline std::vector<Token> tokenize() {
         std::vector<Token> tokens;
@@ -61,11 +61,11 @@ public:
     }
 
 private:
-    [[nodiscard]] std::optional<char> peak(int head = 0) const {
+    [[nodiscard]] std::optional<char> peak(int head = 1) const {
         if (m_index + head > m_src.length()) {
             return {};
         }
-        return m_src.at(m_index + head);
+        return m_src.at(m_index);
     }
 
     char consume() {
