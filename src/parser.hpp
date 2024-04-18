@@ -2,14 +2,15 @@
 #include <optional>
 #include "tokenization.hpp"
 
-    struct NodeExit
-    {
-        NodeExpr expr;
-    };
-    
+
     struct NodeExpr
     {
         Token _int_lit;
+    };
+    
+        struct NodeExit
+    {
+        NodeExpr expr;
     };
     
 class Parser
@@ -43,12 +44,14 @@ public:
                     exit(EXIT_FAILURE);
                 }   
             }
-            if(peak().value().type != TokenType::semi || !peak().has_value()){
-                  std::cerr << "Invalid Expr" << std::endl;
+            if(peak().value().type == TokenType::semi && peak().has_value()){
+                consume();
+            } else {
+                    std::cerr << "Invalid Expr" << std::endl;
                     exit(EXIT_FAILURE);
             }
         }
-        
+        return exit_node;
     }
 private:
 

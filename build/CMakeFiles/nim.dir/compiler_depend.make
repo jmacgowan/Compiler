@@ -210,7 +210,8 @@ CMakeFiles/nim.dir/src/Nimble.cpp.o: ../src/Nimble.cpp \
   /usr/include/c++/11/bits/stl_bvector.h \
   /usr/include/c++/11/bits/vector.tcc \
   ../src/tokenization.hpp \
-  ../src/parser.hpp
+  ../src/parser.hpp \
+  ../src/generation.hpp
 
 
 ../src/tokenization.hpp:
@@ -598,6 +599,8 @@ CMakeFiles/nim.dir/src/Nimble.cpp.o: ../src/Nimble.cpp \
 /usr/include/x86_64-linux-gnu/bits/types/clockid_t.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/struct___jmp_buf_tag.h:
+
+../src/generation.hpp:
 
 /usr/include/x86_64-linux-gnu/bits/types/timer_t.h:
 
