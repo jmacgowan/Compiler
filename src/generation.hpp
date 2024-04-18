@@ -3,7 +3,7 @@
 class Generator
 {
 public:
-    inline Generator(NodeExit root)
+    inline Generator(NodeStmntExit root)
         :m_root(std::move(root))
     {}
 
@@ -17,5 +17,5 @@ public:
         return output.str();
     }
 private:
-   const NodeExit m_root;
+   const NodeStmntExit m_root;
 };
