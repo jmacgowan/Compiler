@@ -12,7 +12,11 @@ enum class TokenType {
     closeParen,
     ident,
     let,
-    eq
+    eq,
+    plus,
+    minus,
+    multi,
+    divide
 };
 
 struct Token {
@@ -46,6 +50,23 @@ public:
                     consume();
                     tokens.push_back({TokenType::eq});
                     break;
+                case '*':
+                    consume();
+                    tokens.push_back({TokenType::multi});
+                    break;
+                case '/':
+                    consume();
+                    tokens.push_back({TokenType::divide});
+                    break;
+                case '+':
+                    consume();
+                    tokens.push_back({TokenType::plus});
+                    break;
+                case '-':
+                    consume();
+                    tokens.push_back({TokenType::minus});
+                    break;
+                
                 default:
                     if (std::isdigit(peek().value())) {
                         buf.push_back(consume());

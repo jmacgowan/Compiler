@@ -3,12 +3,12 @@
 #include <variant>
 #include "arena.hpp"
 
-    struct NodeExprIntLit
+    struct NodeTermIntLit
     {
         Token _int_lit;
     }; 
     
-    struct NodeExprIdent
+    struct NodeTermIdent
     {
         Token ident;
     };
@@ -29,9 +29,12 @@
         std::variant<BinExprAdd*,BinExprMulti*> var;
     };
 
+    struct NodeTerm{
+        std::variant<NodeTermIntLit*, NodeTermIdent*> var;
+    };
     struct NodeExpr
     {
-        std::variant<NodeExprIntLit*, NodeExprIdent*, BinExpr*> var;
+        std::variant<NodeTerm*, BinExpr*> var;
     };
     
     struct NodeStmntExit
@@ -62,22 +65,61 @@ public:
     : m_tokens(std::move(tokens)),
     m_allocator(1024*1024*4) {}
 
-    std::optional<NodeExpr*> parser_expr(){
-        if (peak().has_value() && peak().value().type == TokenType::_int_lit)
+
+    std::optional<NodeTerm*> parse_term(){
+         if (peak().has_value() && peak().value().type == TokenType::_int_lit)
         {
-            auto node_expr_int_lit = m_allocator.alloc<NodeExprIntLit>();
-            node_expr_int_lit->_int_lit = consume();
-            auto expr = m_allocator.alloc<NodeExpr>();
-            expr->var = node_expr_int_lit;
-            return expr;
+            auto node_term_int_lit = m_allocator.alloc<NodeTermIntLit>();
+            node_term_int_lit->_int_lit = consume();
+            auto term = m_allocator.alloc<NodeTerm>();
+            term->var = node_term_int_lit;
+            return term;
         } else if(peak().has_value() && peak().value().type == TokenType::ident)
         {
-            auto node_expr_ident = m_allocator.alloc<NodeExprIdent>();
-            node_expr_ident->ident = consume();
-            auto expr = m_allocator.alloc<NodeExpr>();
-            expr->var = node_expr_ident;
-            return expr;
+            auto node_term_ident = m_allocator.alloc<NodeTermIdent>();
+            node_term_ident->ident = consume();
+            auto term = m_allocator.alloc<NodeTerm>();
+            term->var = node_term_ident;
+            return term;
+        } 
+        
+        else {return {};}
+    }
+    std::optional<NodeExpr*> parser_expr(){
+
+        if (auto term = parse_term()){
+            if (peak().has_value() && peak().value().type == TokenType::plus)
+            {
+            
+            auto bin_expr = m_allocator.alloc<BinExpr>();
+            if(peak().has_value()&& peak().value().type == TokenType::plus){
+                auto bin_expr_add = m_allocator.alloc<BinExprAdd>();
+                auto lhs_expr = m_allocator.alloc<NodeExpr>();
+                lhs_expr->var = term.value();
+                bin_expr_add->lhs = lhs_expr;
+                consume();
+                if (auto rhs = parser_expr())
+                {
+                    bin_expr_add->rhs = rhs.value();
+                    bin_expr->var = bin_expr_add;
+                    auto expr =m_allocator.alloc<NodeExpr>();
+                    expr->var = bin_expr;
+                    return expr;
+                }
+                
+            }else
+            {
+                std::cerr << "Invalid operator" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            }else
+        {
+           auto expr = m_allocator.alloc<NodeExpr>();
+           expr->var = term.value();
+           return expr;
         }
+        } 
+        
         else {return {};}
     }
 
