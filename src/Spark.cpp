@@ -12,7 +12,7 @@ int main(int argc, char const *argv[])
 {
     if (argc != 2) {
         std::cerr << "Incorrect Usage. Correct usage follows." << std::endl;
-        std::cerr << "nim <input.ni>" << std::endl;
+        std::cerr << "spark <input.sp>" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -28,17 +28,17 @@ int main(int argc, char const *argv[])
     std::vector<Token> tokens = tokenizer.tokenize();
 
     Parser parser(std::move(tokens));
-    std::optional<NodeExit> tree = parser.parse();
+    std::optional<NodeProg> program = parser.parse_prog();
 
-    if (!tree.has_value()){
+    if (!program.has_value()){
         std::cerr << "No parsing occured" << std::endl;
         return EXIT_FAILURE;
     }
-    
-    Generator generator(tree.value());
+
+    Generator generator(program.value());
     {
         std::fstream file("../out.asm", std::ios::out);
-        file << generator.generate();
+        file << generator.gen_prog();
     } 
 
     system("nasm -felf64 ../out.asm");

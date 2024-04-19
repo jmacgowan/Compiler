@@ -212,5 +212,9 @@ CMakeFiles/nim.dir/src/Nimble.cpp.o
  /usr/include/c++/11/bits/vector.tcc
  /mnt/c/Documents and Settings/Audib/Documents/PersonProject/Compiler/src/tokenization.hpp
  /mnt/c/Documents and Settings/Audib/Documents/PersonProject/Compiler/src/parser.hpp
+ /usr/include/c++/11/variant
+ /usr/include/c++/11/bits/invoke.h
+ /usr/include/c++/11/ext/aligned_buffer.h
+ /usr/include/c++/11/bits/parse_numbers.h
  /mnt/c/Documents and Settings/Audib/Documents/PersonProject/Compiler/src/generation.hpp
 

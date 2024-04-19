@@ -1,0 +1,1 @@
+g++-10 CMakeFiles/spark.dir/src/Spark.cpp.o -o spark 

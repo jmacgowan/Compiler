@@ -117,41 +117,41 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named nim
+# Target rules for targets named spark
 
 # Build rule for target.
-nim: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 nim
-.PHONY : nim
+spark: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 spark
+.PHONY : spark
 
 # fast build rule for target.
-nim/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/nim.dir/build.make CMakeFiles/nim.dir/build
-.PHONY : nim/fast
+spark/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spark.dir/build.make CMakeFiles/spark.dir/build
+.PHONY : spark/fast
 
-src/Nimble.o: src/Nimble.cpp.o
-.PHONY : src/Nimble.o
+src/Spark.o: src/Spark.cpp.o
+.PHONY : src/Spark.o
 
 # target to build an object file
-src/Nimble.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/nim.dir/build.make CMakeFiles/nim.dir/src/Nimble.cpp.o
-.PHONY : src/Nimble.cpp.o
+src/Spark.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spark.dir/build.make CMakeFiles/spark.dir/src/Spark.cpp.o
+.PHONY : src/Spark.cpp.o
 
-src/Nimble.i: src/Nimble.cpp.i
-.PHONY : src/Nimble.i
+src/Spark.i: src/Spark.cpp.i
+.PHONY : src/Spark.i
 
 # target to preprocess a source file
-src/Nimble.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/nim.dir/build.make CMakeFiles/nim.dir/src/Nimble.cpp.i
-.PHONY : src/Nimble.cpp.i
+src/Spark.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spark.dir/build.make CMakeFiles/spark.dir/src/Spark.cpp.i
+.PHONY : src/Spark.cpp.i
 
-src/Nimble.s: src/Nimble.cpp.s
-.PHONY : src/Nimble.s
+src/Spark.s: src/Spark.cpp.s
+.PHONY : src/Spark.s
 
 # target to generate assembly for a file
-src/Nimble.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/nim.dir/build.make CMakeFiles/nim.dir/src/Nimble.cpp.s
-.PHONY : src/Nimble.cpp.s
+src/Spark.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spark.dir/build.make CMakeFiles/spark.dir/src/Spark.cpp.s
+.PHONY : src/Spark.cpp.s
 
 # Help Target
 help:
@@ -161,10 +161,10 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... nim"
-	@echo "... src/Nimble.o"
-	@echo "... src/Nimble.i"
-	@echo "... src/Nimble.s"
+	@echo "... spark"
+	@echo "... src/Spark.o"
+	@echo "... src/Spark.i"
+	@echo "... src/Spark.s"
 .PHONY : help
 
 

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(Nimble)
-
+project(Spark)
+set(CMAKE_CXX_COMPILER g++-10)
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(nim src/Nimble.cpp)
+add_executable(spark src/Spark.cpp)

@@ -1,7 +1,6 @@
 #pragma once
 #include <optional>
 #include <variant>
-#include "tokenization.hpp"
 
     struct NodeExprIntLit
     {
@@ -57,57 +56,77 @@ public:
         else {return {};}
     }
 
-    std::optional<NodeStmnt> parse_stmnt(){
-        NodeStmntExit stmnt_exit;
-        if(peak().value().type == TokenType::_return && peak(1).has_value() && peak(1).value().type == TokenType :: openParen){
-                consume();
-                consume();
-                if (auto node_expr = parser_expr()){
-                    stmnt_exit = {.expr = node_expr.value()};
-                 } 
-                else {
-                    std::cerr << "Invalid Expr" << std::endl;
+    std::optional<NodeStmnt> parse_stmnt() {
+    NodeStmntExit stmnt_exit;
+           if (peak().has_value() && peak().value().type == TokenType::let) {
+        consume(); // Consume 'let'
+
+        if (peak().has_value() && peak().value().type == TokenType::ident) {
+            Token ident = consume(); // Consume identifier
+            if (peak().has_value() && peak().value().type == TokenType::eq) {
+                consume(); // Consume '='
+                if (auto node_expr = parser_expr()) {
+                    if (peak().has_value() && peak().value().type == TokenType::semi) {
+                        consume(); // Consume ';'
+                        return NodeStmnt{.var = NodeStmntLet{.ident = ident, .expr = node_expr.value()}};
+                    } else {
+                        std::cerr << "Expected ';' after expression" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                } else {
+                    std::cerr << "Invalid expression after '='" << std::endl;
                     exit(EXIT_FAILURE);
-                }   
-            if(peak().has_value() && peak().value().type == TokenType::closeParen){
-                consume();
-            } else 
-            {
-                std::cerr << "Expected ')'" << std::endl;
-                    exit(EXIT_FAILURE);
-            }
-            if(peak().has_value() && peak().value().type == TokenType::semi){
-                consume();
+                }
             } else {
-                    std::cerr << "Expected ';'" << std::endl;
-                    exit(EXIT_FAILURE);
+                std::cerr << "Expected '=' after identifier" << std::endl;
+                exit(EXIT_FAILURE);
             }
-        return NodeStmnt{.var = stmnt_exit};
-        } else if(peak().has_value() && peak().value().type == TokenType::var && peak(1).has_value() && peak(1).value().type == TokenType::ident && peak().has_value() && peak().value().type == TokenType::eq)
-        {
-            consume();
-            auto stmnt_let = NodeStmntLet{.ident = consume() };
-            consume();
-            if (auto expr = parser_expr())
-            {
-                stmnt_let.expr = expr.value();
+        } else {
+            std::cerr << "Expected identifier after 'let'" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    }
+    if (peak().value().type == TokenType::_return) {
+        consume(); 
+        
+        if (peak().has_value() && peak().value().type == TokenType::openParen) {
+            consume(); 
+            
+            if (auto node_expr = parser_expr()) {
+                stmnt_exit = {.expr = node_expr.value()};
+            } else {
+                std::cerr << "Invalid Expr2" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+            if (peak().has_value() && peak().value().type == TokenType::closeParen) {
+                consume(); 
+            } else {
+                std::cerr << "Expected ')'" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            if (auto node_expr = parser_expr()) {
+                stmnt_exit = {.expr = node_expr.value()};
             } else {
                 std::cerr << "Invalid Expr" << std::endl;
                 exit(EXIT_FAILURE);
             }
-            if(peak().has_value() && peak().value().type == TokenType::semi){
-                consume();
-            } else {
-                    std::cerr << "Expected ';'" << std::endl;
-                    exit(EXIT_FAILURE);
-            }
-            return NodeStmnt {.var = stmnt_let};
-            
-        } else
-        {
-            return {};
         }
+
+        // Check for the semicolon
+        if (peak().has_value() && peak().value().type == TokenType::semi) {
+            consume(); // Consume ';'
+        } else {
+            std::cerr << "Expected ';'" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        return NodeStmnt{.var = stmnt_exit};
+    } else {
+        return {};
     }
+}
 
     std::optional<NodeProg> parse_prog(){
         NodeProg prog;
@@ -119,12 +138,12 @@ public:
             }
             else
             {
-                std::cerr << "Invalid Expr" << std::endl;
+                std::cerr << "Invalid Expr5" << std::endl;
                 exit(EXIT_FAILURE);
             }
             
         }
-        
+        return prog;
     }
 private:
 

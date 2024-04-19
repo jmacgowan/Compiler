@@ -11,7 +11,7 @@ enum class TokenType {
     openParen,
     closeParen,
     ident,
-    var,
+    let,
     eq
 };
 
@@ -22,7 +22,7 @@ struct Token {
 
 class Tokenizer {
 public:
-    explicit Tokenizer(const std::string& src) : m_src(src) {}
+    Tokenizer(const std::string& src) : m_src(src) {}
 
     std::vector<Token> tokenize() {
         std::vector<Token> tokens;
@@ -46,41 +46,36 @@ public:
                     consume();
                     tokens.push_back({TokenType::eq});
                     break;
-                    
                 default:
-                    if (std::isalpha(peek().value())) {
-                        buf.push_back(consume());
-                        while (peek().has_value() && std::isalnum(peek().value())) {
-                            buf.push_back(consume());
-                        }
-                        if (buf == "return") {
-                            tokens.push_back({.type = TokenType::_return});
-                            buf.clear();
-                            break;
-                        } else if(buf == "let"){
-                            tokens.push_back({.type = TokenType::ident, .value = buf});
-                            buf.clear();
-                        }
-                        
-                    } else if (std::isdigit(peek().value())) {
+                    if (std::isdigit(peek().value())) {
                         buf.push_back(consume());
                         while (peek().has_value() && std::isdigit(peek().value())) {
                             buf.push_back(consume());
                         }
                         tokens.push_back({.type = TokenType::_int_lit, .value = buf});
                         buf.clear();
-                        break;
+                    } else if (std::isalpha(peek().value())) {
+                        buf.push_back(consume());
+                        while (peek().has_value() && (std::isalnum(peek().value()) || peek().value() == '_')) {
+                            buf.push_back(consume());
+                        }
+                        if (buf == "return") {
+                            tokens.push_back({.type = TokenType::_return});
+                        } else if (buf == "let") {
+                            tokens.push_back({.type = TokenType::let});
+                        } else {
+                            tokens.push_back({.type = TokenType::ident, .value = buf});
+                        }
+                        buf.clear();
                     } else if (std::isspace(peek().value())) {
                         consume();
-                        break;
                     } else {
-                        tokens.push_back({.type = TokenType::ident, .value = buf});
-                        buf.clear();
-                        continue;
+                        // Invalid character
+                        std::cerr << "Invalid character: " << peek().value() << std::endl;
+                        exit(EXIT_FAILURE);
                     }
             }
         }
-        m_index = 0;
         return tokens;
     }
 
@@ -97,5 +92,5 @@ private:
     }
 
     const std::string m_src;
-    int m_index = 0;
+    size_t m_index = 0;
 };

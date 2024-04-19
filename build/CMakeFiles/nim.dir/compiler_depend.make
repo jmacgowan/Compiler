@@ -211,8 +211,16 @@ CMakeFiles/nim.dir/src/Nimble.cpp.o: ../src/Nimble.cpp \
   /usr/include/c++/11/bits/vector.tcc \
   ../src/tokenization.hpp \
   ../src/parser.hpp \
+  /usr/include/c++/11/variant \
+  /usr/include/c++/11/bits/invoke.h \
+  /usr/include/c++/11/ext/aligned_buffer.h \
+  /usr/include/c++/11/bits/parse_numbers.h \
   ../src/generation.hpp
 
+
+/usr/include/c++/11/bits/parse_numbers.h:
+
+/usr/include/c++/11/variant:
 
 ../src/tokenization.hpp:
 
@@ -319,6 +327,8 @@ CMakeFiles/nim.dir/src/Nimble.cpp.o: ../src/Nimble.cpp \
 /usr/include/x86_64-linux-gnu/bits/uintn-identity.h:
 
 /usr/include/x86_64-linux-gnu/bits/byteswap.h:
+
+/usr/include/c++/11/ext/aligned_buffer.h:
 
 /usr/include/endian.h:
 
@@ -483,6 +493,8 @@ CMakeFiles/nim.dir/src/Nimble.cpp.o: ../src/Nimble.cpp \
 /usr/include/x86_64-linux-gnu/bits/waitstatus.h:
 
 /usr/include/c++/11/bits/postypes.h:
+
+/usr/include/c++/11/bits/invoke.h:
 
 /usr/include/x86_64-linux-gnu/bits/timex.h:
 
