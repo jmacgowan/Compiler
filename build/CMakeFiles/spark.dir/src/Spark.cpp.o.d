@@ -169,10 +169,13 @@ CMakeFiles/spark.dir/src/Spark.cpp.o: \
  /usr/include/c++/10/variant /usr/include/c++/10/bits/invoke.h \
  /usr/include/c++/10/ext/aligned_buffer.h \
  /usr/include/c++/10/bits/parse_numbers.h \
+ /mnt/c/Documents\ and\ Settings/Audib/Documents/PersonProject/Compiler/src/arena.hpp \
+ /usr/include/malloc.h /usr/include/c++/10/cstddef \
  /mnt/c/Documents\ and\ Settings/Audib/Documents/PersonProject/Compiler/src/generation.hpp \
  /usr/include/c++/10/unordered_map /usr/include/c++/10/bits/hashtable.h \
  /usr/include/c++/10/bits/hashtable_policy.h /usr/include/c++/10/tuple \
  /usr/include/c++/10/array /usr/include/c++/10/bits/uses_allocator.h \
  /usr/include/c++/10/bits/node_handle.h \
  /usr/include/c++/10/bits/unordered_map.h \
- /usr/include/c++/10/bits/erase_if.h
+ /usr/include/c++/10/bits/erase_if.h /usr/include/c++/10/cassert \
+ /usr/include/assert.h

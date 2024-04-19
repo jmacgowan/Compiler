@@ -1,6 +1,7 @@
 #pragma once
 #include <optional>
 #include <variant>
+#include "arena.hpp"
 
     struct NodeExprIntLit
     {
@@ -11,31 +12,46 @@
     {
         Token ident;
     };
+
+    struct NodeExpr;
     
+    struct BinExprAdd{
+        NodeExpr* lhs;
+        NodeExpr* rhs;
+    };
+
+    struct BinExprMulti{
+        NodeExpr* lhs;
+        NodeExpr* rhs;
+    };
+
+    struct BinExpr{
+        std::variant<BinExprAdd*,BinExprMulti*> var;
+    };
 
     struct NodeExpr
     {
-        std::variant<NodeExprIntLit, NodeExprIdent> var;
+        std::variant<NodeExprIntLit*, NodeExprIdent*, BinExpr*> var;
     };
     
     struct NodeStmntExit
     {
-        NodeExpr expr;
+        NodeExpr* expr;
     };
     struct NodeStmntLet
     {
         Token ident;
-        NodeExpr expr;
+        NodeExpr* expr;
     };
 
     struct NodeStmnt
     {
-        std::variant<NodeStmntExit, NodeStmntLet> var;
+        std::variant<NodeStmntExit*, NodeStmntLet*> var;
     };
 
     struct NodeProg
     {
-        std::vector<NodeStmnt> stmnts; 
+        std::vector<NodeStmnt*> stmnts; 
     };
     
 class Parser
@@ -43,22 +59,30 @@ class Parser
 public:
 
     inline explicit Parser(std::vector<Token> tokens)
-    : m_tokens(std::move(tokens)) {}
+    : m_tokens(std::move(tokens)),
+    m_allocator(1024*1024*4) {}
 
-    std::optional<NodeExpr> parser_expr(){
+    std::optional<NodeExpr*> parser_expr(){
         if (peak().has_value() && peak().value().type == TokenType::_int_lit)
         {
-            return NodeExpr {.var = NodeExprIntLit {._int_lit = consume()}};
+            auto node_expr_int_lit = m_allocator.alloc<NodeExprIntLit>();
+            node_expr_int_lit->_int_lit = consume();
+            auto expr = m_allocator.alloc<NodeExpr>();
+            expr->var = node_expr_int_lit;
+            return expr;
         } else if(peak().has_value() && peak().value().type == TokenType::ident)
         {
-           return NodeExpr {.var = NodeExprIdent{.ident = consume()}};
+            auto node_expr_ident = m_allocator.alloc<NodeExprIdent>();
+            node_expr_ident->ident = consume();
+            auto expr = m_allocator.alloc<NodeExpr>();
+            expr->var = node_expr_ident;
+            return expr;
         }
         else {return {};}
     }
 
-    std::optional<NodeStmnt> parse_stmnt() {
-    NodeStmntExit stmnt_exit;
-           if (peak().has_value() && peak().value().type == TokenType::let) {
+std::optional<NodeStmnt*> parse_stmnt() {
+    if (peak().has_value() && peak().value().type == TokenType::let) {
         consume(); // Consume 'let'
 
         if (peak().has_value() && peak().value().type == TokenType::ident) {
@@ -68,7 +92,13 @@ public:
                 if (auto node_expr = parser_expr()) {
                     if (peak().has_value() && peak().value().type == TokenType::semi) {
                         consume(); // Consume ';'
-                        return NodeStmnt{.var = NodeStmntLet{.ident = ident, .expr = node_expr.value()}};
+                        auto node_stmnt_let = m_allocator.alloc<NodeStmntLet>();
+                        node_stmnt_let->ident = ident;
+                        node_stmnt_let->expr = node_expr.value();
+
+                        auto node_stmnt = m_allocator.alloc<NodeStmnt>();
+                        node_stmnt->var = node_stmnt_let;
+                        return node_stmnt;
                     } else {
                         std::cerr << "Expected ';' after expression" << std::endl;
                         exit(EXIT_FAILURE);
@@ -85,31 +115,32 @@ public:
             std::cerr << "Expected identifier after 'let'" << std::endl;
             exit(EXIT_FAILURE);
         }
-    }
-    if (peak().value().type == TokenType::_return) {
-        consume(); 
+    } else if (peak().has_value() && peak().value().type == TokenType::_return) {
+        consume(); // Consume 'return'
         
+        auto node_stmnt_exit = m_allocator.alloc<NodeStmntExit>();
+
         if (peak().has_value() && peak().value().type == TokenType::openParen) {
-            consume(); 
+            consume(); // Consume '('
             
             if (auto node_expr = parser_expr()) {
-                stmnt_exit = {.expr = node_expr.value()};
+                node_stmnt_exit->expr = node_expr.value();
             } else {
-                std::cerr << "Invalid Expr2" << std::endl;
+                std::cerr << "Invalid expression after '(' for return statement" << std::endl;
                 exit(EXIT_FAILURE);
             }
 
             if (peak().has_value() && peak().value().type == TokenType::closeParen) {
-                consume(); 
+                consume(); // Consume ')'
             } else {
-                std::cerr << "Expected ')'" << std::endl;
+                std::cerr << "Expected ')' after expression in return statement" << std::endl;
                 exit(EXIT_FAILURE);
             }
         } else {
             if (auto node_expr = parser_expr()) {
-                stmnt_exit = {.expr = node_expr.value()};
+                node_stmnt_exit->expr = node_expr.value();
             } else {
-                std::cerr << "Invalid Expr" << std::endl;
+                std::cerr << "Invalid expression for return statement" << std::endl;
                 exit(EXIT_FAILURE);
             }
         }
@@ -118,17 +149,19 @@ public:
         if (peak().has_value() && peak().value().type == TokenType::semi) {
             consume(); // Consume ';'
         } else {
-            std::cerr << "Expected ';'" << std::endl;
+            std::cerr << "Expected ';' after return statement" << std::endl;
             exit(EXIT_FAILURE);
         }
 
-        return NodeStmnt{.var = stmnt_exit};
+        auto node_stmnt = m_allocator.alloc<NodeStmnt>();
+        node_stmnt->var = node_stmnt_exit;
+        return node_stmnt;
     } else {
         return {};
     }
 }
 
-    std::optional<NodeProg> parse_prog(){
+std::optional<NodeProg> parse_prog(){
         NodeProg prog;
         while (peak().has_value())
         {
@@ -160,5 +193,6 @@ private:
 
     const std::vector<Token> m_tokens;
     size_t m_index = 0;
+    ArenaAllocator m_allocator;
     
 };

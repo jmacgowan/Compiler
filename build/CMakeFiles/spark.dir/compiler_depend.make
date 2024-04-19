@@ -212,6 +212,9 @@ CMakeFiles/spark.dir/src/Spark.cpp.o: ../src/Spark.cpp \
   /usr/include/c++/10/bits/invoke.h \
   /usr/include/c++/10/ext/aligned_buffer.h \
   /usr/include/c++/10/bits/parse_numbers.h \
+  ../src/arena.hpp \
+  /usr/include/malloc.h \
+  /usr/include/c++/10/cstddef \
   ../src/generation.hpp \
   /usr/include/c++/10/unordered_map \
   /usr/include/c++/10/bits/hashtable.h \
@@ -221,14 +224,24 @@ CMakeFiles/spark.dir/src/Spark.cpp.o: ../src/Spark.cpp \
   /usr/include/c++/10/bits/uses_allocator.h \
   /usr/include/c++/10/bits/node_handle.h \
   /usr/include/c++/10/bits/unordered_map.h \
-  /usr/include/c++/10/bits/erase_if.h
+  /usr/include/c++/10/bits/erase_if.h \
+  /usr/include/c++/10/cassert \
+  /usr/include/assert.h
 
+
+/usr/include/assert.h:
+
+/usr/include/c++/10/cassert:
 
 /usr/include/c++/10/array:
 
 /usr/include/c++/10/tuple:
 
 /usr/include/c++/10/unordered_map:
+
+/usr/include/malloc.h:
+
+../src/arena.hpp:
 
 /usr/include/c++/10/ext/aligned_buffer.h:
 
@@ -243,6 +256,8 @@ CMakeFiles/spark.dir/src/Spark.cpp.o: ../src/Spark.cpp \
 /usr/include/c++/10/bits/stl_relops.h:
 
 /usr/include/c++/10/utility:
+
+/usr/include/c++/10/cstddef:
 
 /usr/include/c++/10/fstream:
 
