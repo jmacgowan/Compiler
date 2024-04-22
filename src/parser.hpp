@@ -81,39 +81,43 @@ public:
         }
     }
 
-    std::optional<NodeExpr*> parser_expr() {
-        if (auto term = parse_term()) {
-            if (tryConsume(TokenType::plus)) {
-                auto bin_expr = m_allocator.alloc<BinExpr>();
-                auto bin_expr_add = m_allocator.alloc<BinExprAdd>();
-                auto lhs_expr = m_allocator.alloc<NodeExpr>();
-                lhs_expr->var = term.value();
-                bin_expr_add->lhs = lhs_expr;
-                if (auto rhs = parser_expr()) {
-                    bin_expr_add->rhs = rhs.value();
-                    bin_expr->var = bin_expr_add;
-                    auto expr = m_allocator.alloc<NodeExpr>();
-                    expr->var = bin_expr;
-                    return expr;
-                } else {
-                    std::cerr << "Invalid right-hand side expression after '+'" << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-            } else {
+std::optional<NodeExpr*> parser_expr() {
+    if (auto term = parse_term()) {
+        if (tryConsume(TokenType::plus)) {
+            auto bin_expr = m_allocator.alloc<BinExpr>();
+            auto bin_expr_add = m_allocator.alloc<BinExprAdd>();
+            auto lhs_expr = m_allocator.alloc<NodeExpr>();
+            lhs_expr->var = term.value();
+            bin_expr_add->lhs = lhs_expr;
+            if (auto rhs = parser_expr()) {
+                bin_expr_add->rhs = rhs.value();
+                bin_expr->var = bin_expr_add;
                 auto expr = m_allocator.alloc<NodeExpr>();
-                expr->var = term.value();
+                expr->var = bin_expr;
                 return expr;
             }
+            std::cerr << "Invalid right-hand side expression after '+'" << std::endl;
+            exit(EXIT_FAILURE);
         }
-        return {};
+        auto expr = m_allocator.alloc<NodeExpr>();
+        expr->var = term.value();
+        return expr;
     }
+    if (tryConsume(TokenType::openParen)) {
+        auto nested_expr = parser_expr();
+        tryConsume(TokenType::closeParen, "Expected ')' to close nested expression");
+        return nested_expr;
+    }
+    return {};
+}
+
 
     std::optional<NodeStmnt*> parse_stmnt() {
-        if (tryConsume(TokenType::let)) {
-            if (auto ident = tryConsume(TokenType::ident)) {
-                if (tryConsume(TokenType::eq)) {
+        if (tryConsume(TokenType::let).has_value()) {
+            auto ident = tryConsume(TokenType::ident, "Expected Identifier after let"); 
+                tryConsume(TokenType::eq, "Expected '=' after ident");
                     if (auto node_expr = parser_expr()) {
-                        if (tryConsume(TokenType::semi)) {
+                        tryConsume(TokenType::semi, "Expected ';' after declaration");
                             auto node_stmnt_let = m_allocator.alloc<NodeStmntLet>();
                             node_stmnt_let->ident = ident.value();
                             node_stmnt_let->expr = node_expr.value();
@@ -121,45 +125,33 @@ public:
                             auto node_stmnt = m_allocator.alloc<NodeStmnt>();
                             node_stmnt->var = node_stmnt_let;
                             return node_stmnt;
-                        } else {
-                            std::cerr << "Expected ';' after expression" << std::endl;
-                            exit(EXIT_FAILURE);
-                        }
+                        
                     } else {
                         std::cerr << "Invalid expression after '='" << std::endl;
                         exit(EXIT_FAILURE);
-                    }
-                } else {
-                    std::cerr << "Expected '=' after identifier" << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-            } else {
-                std::cerr << "Expected identifier after 'let'" << std::endl;
-                exit(EXIT_FAILURE);
-            }
-        } else if (tryConsume(TokenType::_return)) {
+                    }} 
+        else if (tryConsume(TokenType::_return).has_value()) {
             auto node_stmnt_exit = m_allocator.alloc<NodeStmntExit>();
 
-            if (tryConsume(TokenType::openParen)) {
+            if (tryConsume(TokenType::openParen).has_value()) {
                 if (auto node_expr = parser_expr()) {
                     node_stmnt_exit->expr = node_expr.value();
                 } else {
                     std::cerr << "Invalid expression after '(' for return statement" << std::endl;
                     exit(EXIT_FAILURE);
                 }
+                tryConsume(TokenType::closeParen, "Expected ')' after return statement");
 
-                if (!tryConsume(TokenType::closeParen)) {
-                    std::cerr << "Expected ')' after expression in return statement" << std::endl;
+            } else
+            {
+                if (auto node_expr = parser_expr()) {
+                    node_stmnt_exit->expr = node_expr.value();
+                } else {
+                    std::cerr << "Invalid expression for return statement" << std::endl;
                     exit(EXIT_FAILURE);
                 }
             }
-
-            // Check for the semicolon
-            if (!tryConsume(TokenType::semi)) {
-                std::cerr << "Expected ';' after return statement" << std::endl;
-                exit(EXIT_FAILURE);
-            }
-
+            tryConsume(TokenType::semi, "Expected ';' after return statement");
             auto node_stmnt = m_allocator.alloc<NodeStmnt>();
             node_stmnt->var = node_stmnt_exit;
             return node_stmnt;
@@ -187,6 +179,13 @@ private:
             return consume();
         }
         return {};
+    }    
+    std::optional<Token> tryConsume(TokenType type, const std::string& errorMessage) {
+        if (peak().has_value() && peak().value().type == type) {
+            return consume();
+        }
+        std::cerr << errorMessage << std::endl;
+        exit(EXIT_FAILURE);
     }
 
     [[nodiscard]] std::optional<Token> peak(int offset = 0) const {
