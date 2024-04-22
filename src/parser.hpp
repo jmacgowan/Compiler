@@ -2,6 +2,7 @@
 #include <optional>
 #include <variant>
 #include "arena.hpp"
+#include "tokenization.hpp"
 
     struct NodeTermIntLit
     {
@@ -20,13 +21,13 @@
         NodeExpr* rhs;
     };
 
-    // struct BinExprMulti{
-    //     NodeExpr* lhs;
-    //     NodeExpr* rhs;
-    // };
+    struct BinExprMulti{
+        NodeExpr* lhs;
+        NodeExpr* rhs;
+    };
 
     struct BinExpr{
-        BinExprAdd* var;
+        std::variant<BinExprAdd*, BinExprMulti*> var;
     };
 
     struct NodeTerm{
@@ -81,8 +82,30 @@ public:
         }
     }
 
-std::optional<NodeExpr*> parser_expr() {
-    if (auto term = parse_term()) {
+std::optional<NodeExpr*> parser_expr(int min_prec = 0) {
+
+        std::optional<NodeTerm*> term = parse_term();
+        if (!term.has_value()) {
+            return {};
+        }
+
+        while (true)
+        {
+           std::optional<Token> curr_token = peak();
+           std::optional<int> prec;
+           if (!curr_token.has_value())
+           {
+                prec = bin_prec(curr_token->type);
+                if (!prec.has_value() || prec<min_prec)
+                {
+                    break;
+                }   
+           }
+           Token op = consume();
+        }
+        
+
+        if (auto term = parse_term()) {
         if (tryConsume(TokenType::plus)) {
             auto bin_expr = m_allocator.alloc<BinExpr>();
             auto bin_expr_add = m_allocator.alloc<BinExprAdd>();
@@ -98,7 +121,24 @@ std::optional<NodeExpr*> parser_expr() {
             }
             std::cerr << "Invalid right-hand side expression after '+'" << std::endl;
             exit(EXIT_FAILURE);
+        } else if (tryConsume(TokenType::plus))
+        {
+            auto bin_expr = m_allocator.alloc<BinExpr>();
+            auto bin_expr_multi = m_allocator.alloc<BinExprMulti>();
+            auto lhs_expr = m_allocator.alloc<NodeExpr>();
+            lhs_expr->var = term.value();
+            bin_expr_multi->lhs = lhs_expr;
+            if (auto rhs = parser_expr()) {
+                bin_expr_multi->rhs = rhs.value();
+                bin_expr->var = bin_expr_multi;
+                auto expr = m_allocator.alloc<NodeExpr>();
+                expr->var = bin_expr;
+                return expr;
+            }
+            std::cerr << "Invalid right-hand side expression after '*'" << std::endl;
+            exit(EXIT_FAILURE);
         }
+        
         auto expr = m_allocator.alloc<NodeExpr>();
         expr->var = term.value();
         return expr;

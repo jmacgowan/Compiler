@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+
 enum class TokenType {
     _return,
     _int_lit,
@@ -19,11 +20,26 @@ enum class TokenType {
     divide
 };
 
+
 struct Token {
     TokenType type;
     std::optional<std::string> value;
 };
 
+std::optional<int> bin_prec(TokenType type){
+    switch (type)
+    {
+    case TokenType::plus:
+        return 1;
+        break;
+    case TokenType::multi:
+        return 2;
+        break;
+    default:
+    return {};
+        break;
+    }
+}
 class Tokenizer {
 public:
     Tokenizer(const std::string& src) : m_src(src) {}
