@@ -58,7 +58,12 @@ public:
             }  
             
             void operator()(const BinExprMulti* multi){
-
+                gen->gen_expr(multi->lhs);
+                gen->gen_expr(multi->rhs);
+                gen->pop("rax");
+                gen->pop("rbx");
+                gen->m_output << "    imul rax, rbx\n";
+                gen->push("rax");
             }
 
 

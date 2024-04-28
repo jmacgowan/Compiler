@@ -81,13 +81,12 @@ public:
         }
     }
 
-std::optional<NodeExpr*> parser_expr(int min_prec = 0) {
+std::optional<NodeExpr*> parser_expr(int min_prec) {
 
         std::optional<NodeTerm*> term = parse_term();
         if (!term.has_value()) {
             if (tryConsume(TokenType::openParen)) {
-            printf("jklnsf");
-            auto nested_expr = parser_expr();
+            auto nested_expr = parser_expr(0);
             tryConsume(TokenType::closeParen, "Expected ')' to close nested expression");
             return nested_expr;
         }
@@ -117,7 +116,7 @@ std::optional<NodeExpr*> parser_expr(int min_prec = 0) {
             auto lhs_expr = m_allocator.alloc<NodeExpr>();
             lhs_expr->var = term.value();
             bin_expr_add->lhs = lhs_expr;
-            if (auto rhs = parser_expr()) {
+            if (auto rhs = parser_expr(1)) {
                 bin_expr_add->rhs = rhs.value();
                 bin_expr->var = bin_expr_add;
                 auto expr = m_allocator.alloc<NodeExpr>();
@@ -133,7 +132,7 @@ std::optional<NodeExpr*> parser_expr(int min_prec = 0) {
             auto lhs_expr = m_allocator.alloc<NodeExpr>();
             lhs_expr->var = term.value();
             bin_expr_multi->lhs = lhs_expr;
-            if (auto rhs = parser_expr()) {
+            if (auto rhs = parser_expr(2)) {
                 bin_expr_multi->rhs = rhs.value();
                 bin_expr->var = bin_expr_multi;
                 auto expr = m_allocator.alloc<NodeExpr>();
@@ -157,7 +156,7 @@ std::optional<NodeExpr*> parser_expr(int min_prec = 0) {
         if (tryConsume(TokenType::let).has_value()) {
             auto ident = tryConsume(TokenType::ident, "Expected Identifier after let"); 
                 tryConsume(TokenType::eq, "Expected '=' after ident");
-                    if (auto node_expr = parser_expr()) {
+                    if (auto node_expr = parser_expr(0)) {
                         tryConsume(TokenType::semi, "Expected ';' after declaration");
                             auto node_stmnt_let = m_allocator.alloc<NodeStmntLet>();
                             node_stmnt_let->ident = ident.value();
@@ -175,7 +174,7 @@ std::optional<NodeExpr*> parser_expr(int min_prec = 0) {
             auto node_stmnt_exit = m_allocator.alloc<NodeStmntExit>();
 
             if (tryConsume(TokenType::openParen).has_value()) {
-                if (auto node_expr = parser_expr()) {
+                if (auto node_expr = parser_expr(0)) {
                     node_stmnt_exit->expr = node_expr.value();
                 } else {
                     std::cerr << "Invalid expression after '(' for return statement" << std::endl;
@@ -185,7 +184,7 @@ std::optional<NodeExpr*> parser_expr(int min_prec = 0) {
 
             } else
             {
-                if (auto node_expr = parser_expr()) {
+                if (auto node_expr = parser_expr(0)) {
                     node_stmnt_exit->expr = node_expr.value();
                 } else {
                     std::cerr << "Invalid expression for return statement" << std::endl;

@@ -1,3 +1,3 @@
-let x = 7 + 6 + 6;
-let y = 5;
-return (4 + (x + 3));
+let x = 3 + 3 + 3;
+let y = 3;
+return (x * y);
