@@ -257,7 +257,20 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
                     exit(EXIT_FAILURE);
                 }
                 tryConsume(TokenType::closeParen, "Expected ')' after return statement");
-            }  else if (tryConsume(TokenType::_if).has_value()) {
+            }else
+            {
+                if (auto node_expr = parser_expr()) {
+                    node_stmnt_exit->expr = node_expr.value();
+                } else {
+                    std::cerr << "Invalid expression for return statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+            }
+            tryConsume(TokenType::semi, "Expected ';' after return statement");
+            auto node_stmnt = m_allocator.alloc<NodeStmnt>();
+            node_stmnt->var = node_stmnt_exit;
+            return node_stmnt;
+        } else if (tryConsume(TokenType::_if).has_value()) {
             auto node_if = m_allocator.alloc<NodeStmntIf>();
             tryConsume(TokenType::openParen, "Expected '('");
             if (auto node_cond = parse_cond()) {
@@ -280,20 +293,7 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
                     std::cerr << "Invalid expression after '(' for conditional statement" << std::endl;
                     exit(EXIT_FAILURE);
                 }
-            }else
-            {
-                if (auto node_expr = parser_expr()) {
-                    node_stmnt_exit->expr = node_expr.value();
-                } else {
-                    std::cerr << "Invalid expression for return statement" << std::endl;
-                    exit(EXIT_FAILURE);
-                }
             }
-            tryConsume(TokenType::semi, "Expected ';' after return statement");
-            auto node_stmnt = m_allocator.alloc<NodeStmnt>();
-            node_stmnt->var = node_stmnt_exit;
-            return node_stmnt;
-        }
         return {};
     }
 
