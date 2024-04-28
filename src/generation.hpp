@@ -56,6 +56,14 @@ public:
                 gen->m_output << "    add rax, rbx\n";
                 gen->push("rax");
             }  
+            void operator()(const BinExprSub* bin_minus){
+                gen->gen_expr(bin_minus->lhs);
+                gen->gen_expr(bin_minus->rhs);
+                gen->pop("rax");
+                gen->pop("rbx");
+                gen->m_output << "    sub rax, rbx\n";
+                gen->push("rax");
+            }  
             
             void operator()(const BinExprMulti* multi){
                 gen->gen_expr(multi->lhs);
@@ -64,6 +72,15 @@ public:
                 gen->pop("rbx");
                 gen->m_output << "    imul rax, rbx\n";
                 gen->push("rax");
+            } 
+            void operator()(const BinExprDiv* div){
+                gen->gen_expr(div->lhs);
+                gen->gen_expr(div->rhs);
+                gen->pop("rbx"); 
+                gen->pop("rax"); 
+                gen->m_output << "    cqo\n";
+                gen->m_output << "    idiv rbx\n";
+                gen->push("rax"); 
             }
 
 

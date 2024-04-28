@@ -19,6 +19,14 @@
         NodeExpr* lhs;
         NodeExpr* rhs;
     };
+    struct BinExprSub{
+        NodeExpr* lhs;
+        NodeExpr* rhs;
+    };
+    struct BinExprDiv{
+        NodeExpr* lhs;
+        NodeExpr* rhs;
+    };
 
     struct BinExprMulti{
         NodeExpr* lhs;
@@ -26,7 +34,7 @@
     };
 
     struct BinExpr{
-        std::variant<BinExprAdd*, BinExprMulti*> var;
+        std::variant<BinExprAdd*, BinExprSub*, BinExprDiv* ,BinExprMulti*> var;
     };
 
     struct NodeTerm{
@@ -130,13 +138,27 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
             bin_expr_add->rhs = expr_rhs.value();
             expr->var = bin_expr_add;
 
-        } else if (op.type == TokenType::multi)
-        {
+        } 
+        else if (op.type == TokenType::minus) {
+            auto bin_expr_minus = m_allocator.alloc<BinExprSub>();
+            expr_lhs2->var = expr_lhs->var; 
+            bin_expr_minus->lhs = expr_lhs2;
+            bin_expr_minus->rhs = expr_rhs.value();
+            expr->var = bin_expr_minus;
+            }
+        else if (op.type == TokenType::multi) {
             auto bin_expr_multi = m_allocator.alloc<BinExprMulti>();
             expr_lhs2->var = expr_lhs->var; 
             bin_expr_multi->lhs = expr_lhs2;
             bin_expr_multi->rhs = expr_rhs.value();
             expr->var = bin_expr_multi;
+            } 
+        else if (op.type == TokenType::divide) {
+            auto bin_expr_divide = m_allocator.alloc<BinExprDiv>();
+            expr_lhs2->var = expr_lhs->var; 
+            bin_expr_divide->lhs = expr_lhs2;
+            bin_expr_divide->rhs = expr_rhs.value();
+            expr->var = bin_expr_divide;
             }
 
         expr_lhs->var = expr;
