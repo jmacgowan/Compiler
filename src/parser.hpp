@@ -81,7 +81,7 @@ public:
         }
     }
 
-std::optional<NodeExpr*> parser_expr(int max_prec) {
+std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
 
         std::optional<NodeTerm*> term = parse_term();
         if (!term.has_value()) {
@@ -150,7 +150,7 @@ std::optional<NodeExpr*> parser_expr(int max_prec) {
         if (tryConsume(TokenType::let).has_value()) {
             auto ident = tryConsume(TokenType::ident, "Expected Identifier after let"); 
                 tryConsume(TokenType::eq, "Expected '=' after ident");
-                    if (auto node_expr = parser_expr(0)) {
+                    if (auto node_expr = parser_expr()) {
                         tryConsume(TokenType::semi, "Expected ';' after declaration");
                             auto node_stmnt_let = m_allocator.alloc<NodeStmntLet>();
                             node_stmnt_let->ident = ident.value();
@@ -168,7 +168,7 @@ std::optional<NodeExpr*> parser_expr(int max_prec) {
             auto node_stmnt_exit = m_allocator.alloc<NodeStmntExit>();
 
             if (tryConsume(TokenType::openParen).has_value()) {
-                if (auto node_expr = parser_expr(0)) {
+                if (auto node_expr = parser_expr()) {
                     node_stmnt_exit->expr = node_expr.value();
                 } else {
                     std::cerr << "Invalid expression after '(' for return statement" << std::endl;
