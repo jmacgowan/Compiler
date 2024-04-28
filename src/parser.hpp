@@ -14,35 +14,55 @@
     };
 
     struct NodeExpr;
+
+    struct NodeTermParen
+    {
+        NodeExpr* expr;
+    };
     
-    struct BinExprAdd{
-        NodeExpr* lhs;
-        NodeExpr* rhs;
-    };
-    struct BinExprSub{
-        NodeExpr* lhs;
-        NodeExpr* rhs;
-    };
-    struct BinExprDiv{
+    struct BinExprAdd
+    {
         NodeExpr* lhs;
         NodeExpr* rhs;
     };
 
-    struct BinExprMulti{
+    struct BinExprSub
+    {
+        NodeExpr* lhs;
+        NodeExpr* rhs;
+    };
+    struct BinExprDiv
+    {
         NodeExpr* lhs;
         NodeExpr* rhs;
     };
 
-    struct BinExpr{
+    struct BinExprMulti
+    {
+        NodeExpr* lhs;
+        NodeExpr* rhs;
+    };
+
+    struct BinExpr
+    {
         std::variant<BinExprAdd*, BinExprSub*, BinExprDiv* ,BinExprMulti*> var;
     };
 
-    struct NodeTerm{
-        std::variant<NodeTermIntLit*, NodeTermIdent*> var;
+    struct NodeTerm
+    {
+        std::variant<NodeTermIntLit*, NodeTermIdent*, NodeTermParen*> var;
     };
     struct NodeExpr
     {
         std::variant<NodeTerm*, BinExpr*> var;
+    };
+
+    struct NodeBool*{
+        Token* _bool;
+    };
+
+    struct NodeCond*{
+        std::variant<NodeBool*, >
     };
     
     struct NodeStmntExit
@@ -54,10 +74,16 @@
         Token ident;
         NodeExpr* expr;
     };
+    struct NodeStmntIf
+    {
+        NodeCond* cond;
+        NodeExpr* trueExpr;
+        NodeExpr* falseExpr;
+    };
 
     struct NodeStmnt
     {
-        std::variant<NodeStmntExit*, NodeStmntLet*> var;
+        std::variant<NodeStmntExit*, NodeStmntLet*, NodeStmntIf*> var;
     };
 
     struct NodeProg
@@ -84,6 +110,20 @@ public:
             auto term = m_allocator.alloc<NodeTerm>();
             term->var = node_term_ident;
             return term;
+        } else if (auto ident = tryConsume(TokenType::openParen)) {
+            auto expr = parser_expr();
+            if (!expr.has_value())
+            {
+            std::cerr <<("Can't parse bracketed expression") << std::endl;
+            exit(EXIT_FAILURE);
+            }
+            tryConsume(TokenType::closeParen, "Expected ')'"); 
+            auto node_term = m_allocator.alloc<NodeTermParen>();
+            node_term->expr = expr.value();
+            auto term = m_allocator.alloc<NodeTerm>();
+            term->var = node_term;
+
+            return term;
         } else {
             return {};
         }
@@ -93,11 +133,7 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
 
         std::optional<NodeTerm*> term = parse_term();
         if (!term.has_value()) {
-            if (tryConsume(TokenType::openParen)) {
-            auto nested_expr = parser_expr(4);
-            tryConsume(TokenType::closeParen, "Expected ')' to close nested expression");
-            return nested_expr;
-        }
+
             return {};
         }
         auto expr_lhs = m_allocator.alloc<NodeExpr>();
@@ -137,7 +173,6 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
             bin_expr_add->lhs = expr_lhs2;
             bin_expr_add->rhs = expr_rhs.value();
             expr->var = bin_expr_add;
-
         } 
         else if (op.type == TokenType::minus) {
             auto bin_expr_minus = m_allocator.alloc<BinExprSub>();
@@ -197,8 +232,17 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
                     exit(EXIT_FAILURE);
                 }
                 tryConsume(TokenType::closeParen, "Expected ')' after return statement");
-
-            } else
+            }  else if (tryConsume(TokenType::_if).has_value()) {
+            auto node_stmnt_exit = m_allocator.alloc<NodeStmntIf>();
+            if (tryConsume(TokenType::_else).has_value()) {
+                if (auto node_expr = parser_expr()) {
+                    node_stmnt_exit->expr = node_expr.value();
+                } else {
+                    std::cerr << "Invalid expression after '(' for return statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                tryConsume(TokenType::closeParen, "Expected ')' after return statement");
+            } }else
             {
                 if (auto node_expr = parser_expr(0)) {
                     node_stmnt_exit->expr = node_expr.value();
@@ -212,7 +256,6 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
             node_stmnt->var = node_stmnt_exit;
             return node_stmnt;
         }
-
         return {};
     }
 

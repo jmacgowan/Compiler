@@ -17,7 +17,12 @@ enum class TokenType {
     plus,
     minus,
     multi,
-    divide
+    divide,
+    _if,
+    _else,
+    _bool,
+    gt,
+    lt
 };
 
 
@@ -30,14 +35,9 @@ std::optional<int> bin_prec(TokenType type){
     switch (type)
     {
     case TokenType::minus:
-        return 1;
-        break;
     case TokenType::plus:
         return 1;
-        break;
     case TokenType::multi:
-        return 2;
-        break;
     case TokenType::divide:
         return 2;
         break;
@@ -88,6 +88,14 @@ public:
                     consume();
                     tokens.push_back({TokenType::minus});
                     break;
+                case '<':
+                    consume();
+                    tokens.push_back({TokenType::lt});
+                    break;
+                case '>':
+                    consume();
+                    tokens.push_back({TokenType::gt});
+                    break;
                 
                 default:
                     if (std::isdigit(peek().value())) {
@@ -106,6 +114,14 @@ public:
                             tokens.push_back({.type = TokenType::_return});
                         } else if (buf == "let") {
                             tokens.push_back({.type = TokenType::let});
+                        }  else if (buf == "if") {
+                            tokens.push_back({.type = TokenType::_if});
+                        }  else if (buf == "else") {
+                            tokens.push_back({.type = TokenType::_else});}  
+                           else if (buf == "true") {
+                            tokens.push_back({.type = TokenType::_bool, .value = "true"});}  
+                          else if (buf == "false") {
+                            tokens.push_back({.type = TokenType::_bool, .value = "false"}); 
                         } else {
                             tokens.push_back({.type = TokenType::ident, .value = buf});
                         }
