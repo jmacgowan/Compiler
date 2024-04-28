@@ -92,6 +92,8 @@ std::optional<NodeExpr*> parser_expr(int max_prec) {
         }
             return {};
         }
+        auto expr_lhs = m_allocator.alloc<NodeExpr>();
+        expr_lhs->var = term.value();
 
         while (true)
         {
@@ -110,46 +112,32 @@ std::optional<NodeExpr*> parser_expr(int max_prec) {
             break;
            }
            
-
+        Token op = consume();
         int prec_new_val = prec.value() + 1;
         auto expr_rhs = parser_expr(prec_new_val);
 
         if (!expr_rhs.has_value())
         {
-            perror("No");
+            std::cerr <<("Can't parse") << std::endl;
             exit(EXIT_FAILURE);
         }
         auto expr = m_allocator.alloc<BinExpr>();
-        if (tryConsume(TokenType::plus)) {
+        auto expr_lhs2 = m_allocator.alloc<NodeExpr>();
+        if (op.type == TokenType::plus) {
             auto bin_expr_add = m_allocator.alloc<BinExprAdd>();
-            auto lhs_expr = m_allocator.alloc<NodeExpr>();
-            lhs_expr->var = term.value();
-            bin_expr_add->lhs = lhs_expr;
-            if (auto rhs = parser_expr(1)) {
-                bin_expr_add->rhs = rhs.value();
-                expr->var = bin_expr_add;
-                auto expr2 = m_allocator.alloc<NodeExpr>();
-                expr2->var = expr;
-                return expr2;
-            }
-            std::cerr << "Invalid right-hand side expression after '+'" << std::endl;
-            exit(EXIT_FAILURE);
-        } else if (tryConsume(TokenType::multi))
+            expr_lhs2->var = expr_lhs->var; 
+            bin_expr_add->lhs = expr_lhs2;
+            bin_expr_add->rhs = expr_rhs.value();
+            expr->var = bin_expr_add;
+
+        } else if (op.type == TokenType::multi)
         {
             auto bin_expr_multi = m_allocator.alloc<BinExprMulti>();
-            auto lhs_expr = m_allocator.alloc<NodeExpr>();
-            lhs_expr->var = term.value();
-            bin_expr_multi->lhs = lhs_expr;
-            if (auto rhs = parser_expr(2)) {
-                bin_expr_multi->rhs = rhs.value();
-                expr->var = bin_expr_multi;
-                auto expr2 = m_allocator.alloc<NodeExpr>();
-                expr2->var = expr;
-                return expr2;
+            expr_lhs2->var = expr_lhs->var; 
+            bin_expr_multi->lhs = expr_lhs2;
+            bin_expr_multi->rhs = expr_rhs.value();
+            expr->var = bin_expr_multi;
             }
-            std::cerr << "Invalid right-hand side expression after '*'" << std::endl;
-            exit(EXIT_FAILURE);
-        } 
 
         expr_lhs->var = expr;
 }
