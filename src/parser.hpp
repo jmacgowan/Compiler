@@ -2,7 +2,6 @@
 #include <optional>
 #include <variant>
 #include "arena.hpp"
-#include "tokenization.hpp"
 
     struct NodeTermIntLit
     {
@@ -86,11 +85,20 @@ std::optional<NodeExpr*> parser_expr(int min_prec = 0) {
 
         std::optional<NodeTerm*> term = parse_term();
         if (!term.has_value()) {
+            if (tryConsume(TokenType::openParen)) {
+            printf("jklnsf");
+            auto nested_expr = parser_expr();
+            tryConsume(TokenType::closeParen, "Expected ')' to close nested expression");
+            return nested_expr;
+        }
             return {};
         }
 
         while (true)
         {
+            if (term)
+            {
+            
            std::optional<Token> curr_token = peak();
            std::optional<int> prec;
            if (!curr_token.has_value())
@@ -101,11 +109,8 @@ std::optional<NodeExpr*> parser_expr(int min_prec = 0) {
                     break;
                 }   
            }
-           Token op = consume();
         }
-        
 
-        if (auto term = parse_term()) {
         if (tryConsume(TokenType::plus)) {
             auto bin_expr = m_allocator.alloc<BinExpr>();
             auto bin_expr_add = m_allocator.alloc<BinExprAdd>();
@@ -121,7 +126,7 @@ std::optional<NodeExpr*> parser_expr(int min_prec = 0) {
             }
             std::cerr << "Invalid right-hand side expression after '+'" << std::endl;
             exit(EXIT_FAILURE);
-        } else if (tryConsume(TokenType::plus))
+        } else if (tryConsume(TokenType::multi))
         {
             auto bin_expr = m_allocator.alloc<BinExpr>();
             auto bin_expr_multi = m_allocator.alloc<BinExprMulti>();
@@ -137,17 +142,13 @@ std::optional<NodeExpr*> parser_expr(int min_prec = 0) {
             }
             std::cerr << "Invalid right-hand side expression after '*'" << std::endl;
             exit(EXIT_FAILURE);
-        }
-        
+        } 
+
         auto expr = m_allocator.alloc<NodeExpr>();
         expr->var = term.value();
         return expr;
-    }
-    if (tryConsume(TokenType::openParen)) {
-        auto nested_expr = parser_expr();
-        tryConsume(TokenType::closeParen, "Expected ')' to close nested expression");
-        return nested_expr;
-    }
+}
+         
     return {};
 }
 
