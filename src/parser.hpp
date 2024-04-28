@@ -57,12 +57,14 @@
         std::variant<NodeTerm*, BinExpr*> var;
     };
 
-    struct NodeBool*{
-        Token* _bool;
+    struct NodeBool{
+        NodeExpr* expr1;
+        Token bool1;
+        NodeExpr* expr2;
     };
 
-    struct NodeCond*{
-        std::variant<NodeBool*, >
+    struct NodeCond{
+        NodeBool* var;
     };
     
     struct NodeStmntExit
@@ -74,7 +76,7 @@
         Token ident;
         NodeExpr* expr;
     };
-    struct NodeStmntIf
+    struct NodeIf
     {
         NodeCond* cond;
         NodeExpr* trueExpr;
@@ -83,7 +85,7 @@
 
     struct NodeStmnt
     {
-        std::variant<NodeStmntExit*, NodeStmntLet*, NodeStmntIf*> var;
+        std::variant<NodeStmntExit*, NodeStmntLet*> var;
     };
 
     struct NodeProg
@@ -128,7 +130,24 @@ public:
             return {};
         }
     }
+std::optional<NodeCond*> parse_cond(){
 
+    std::optional<NodeTerm*> term = parse_term();
+    if (!term.has_value()) {
+
+            return {};
+        }
+    auto node_cond = m_allocator.alloc<NodeCond>();
+    auto expr_lhs = m_allocator.alloc<NodeExpr>();
+    Token cond = consume();
+    auto expr_rhs = m_allocator.alloc<NodeExpr>();
+    node_cond->var->expr1 = expr_lhs;
+    node_cond->var->expr2 = expr_rhs;
+    node_cond->var->bool1 = cond;
+
+    return node_cond;
+
+}
 std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
 
         std::optional<NodeTerm*> term = parse_term();
@@ -233,18 +252,17 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
                 }
                 tryConsume(TokenType::closeParen, "Expected ')' after return statement");
             }  else if (tryConsume(TokenType::_if).has_value()) {
-            auto node_stmnt_exit = m_allocator.alloc<NodeStmntIf>();
-            if (tryConsume(TokenType::_else).has_value()) {
-                if (auto node_expr = parser_expr()) {
-                    node_stmnt_exit->expr = node_expr.value();
+            auto node_if = m_allocator.alloc<NodeCond>();
+            if (auto node_cond = parse_cond()) {
+
                 } else {
                     std::cerr << "Invalid expression after '(' for return statement" << std::endl;
                     exit(EXIT_FAILURE);
                 }
-                tryConsume(TokenType::closeParen, "Expected ')' after return statement");
-            } }else
+
+            }else
             {
-                if (auto node_expr = parser_expr(0)) {
+                if (auto node_expr = parser_expr()) {
                     node_stmnt_exit->expr = node_expr.value();
                 } else {
                     std::cerr << "Invalid expression for return statement" << std::endl;
