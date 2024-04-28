@@ -35,6 +35,10 @@ public:
                 gen->m_output << "    mov rax, " << term_int_lit->_int_lit.value.value() << "\n";
                 gen-> push("rax");
         }
+
+        void operator()(const NodeTermParen* bin_expr) {
+            gen->gen_expr(bin_expr->expr);
+        }
         
         };
         
@@ -83,7 +87,6 @@ public:
                 gen->push("rax"); 
             }
 
-
         };
         BinVisitor visitor(this);
         std::visit(visitor, expr->var);
@@ -100,14 +103,53 @@ public:
             void operator()(const BinExpr* bin_expr) {
                 gen->gen_bin_expr(bin_expr);
             }
-
-
+        
         };
 
         ExprVisitor visitor(this);
         std::visit(visitor, expr->var);
     }
 
+void gen_cond(const NodeCond* cond){
+    gen_expr(cond->var->expr1);
+    gen_expr(cond->var->expr2);
+    m_output << "    pop rax\n"; // Right-hand side expression result
+    m_output << "    pop rbx\n"; // Left-hand side expression result
+
+    // Compare the values in rax and rbx based on the condition operator
+    if (cond->var->bool1.type == TokenType::lt) {
+        m_output << "    cmp rbx, rax\n";
+        m_output << "    jl condition_true\n"; // Jump if less
+    } else if (cond->var->bool1.type == TokenType::gt) {
+        m_output << "    cmp rbx, rax\n";
+        m_output << "    jg condition_true\n"; // Jump if greater
+    } else if (cond->var->bool1.type == TokenType::_equals) {
+        m_output << "    cmp rbx, rax\n";
+        m_output << "    je condition_true\n"; // Jump if equal
+    }
+
+    // If the condition is false, jump to the end of the if statement
+    m_output << "    jmp condition_end\n";
+    m_output << "condition_true:\n";
+
+}
+
+void gen_if(const NodeIf* if_stmt) {
+    // Generate code for the condition
+    gen_cond(if_stmt->cond);
+
+    // Generate code for the true branch
+    gen_prog(if_stmt->trueExpr);
+
+    // If there's a false branch, generate code for it
+    if (if_stmt->falseExpr) {
+        m_output << "    jmp if_end\n"; // Jump to the end of the if statement after executing the true branch
+        m_output << "condition_end:\n";
+        gen_prog(if_stmt->falseExpr);
+    }
+
+    m_output << "if_end:\n";
+}
     void gen_stmnt(const NodeStmnt* stmnt) {
         struct StmntVisitor {
             Generator* gen;
@@ -128,6 +170,12 @@ public:
                     gen -> m_vars.insert({stmnt_let->ident.value.value(), Var {.stack_loc = gen->m_stack_size}});
                     gen -> gen_expr(stmnt_let->expr);
                 }
+            }
+            void operator()(const NodeIf* stmnt_if) {
+
+                gen->gen_if(stmnt_if);
+                
+ 
             }
 
         };

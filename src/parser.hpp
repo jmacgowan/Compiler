@@ -13,6 +13,8 @@
         Token ident;
     };
 
+    struct NodeStmnt;
+
     struct NodeExpr;
 
     struct NodeTermParen
@@ -67,12 +69,7 @@
         NodeBool* var;
     };
     
-    struct NodeStmntIf
-    {
-        NodeCond* expr;
-        NodeExpr* trueExpr;
-        NodeExpr* falseExpr;
-    };
+
     struct NodeStmntExit
     {
         NodeExpr* expr;
@@ -85,13 +82,13 @@
     struct NodeIf
     {
         NodeCond* cond;
-        NodeExpr* trueExpr;
-        NodeExpr* falseExpr;
+        NodeStmnt* trueExpr;
+        NodeStmnt* falseExpr;
     };
 
     struct NodeStmnt
     {
-        std::variant<NodeStmntExit*, NodeStmntLet*, NodeStmntIf*> var;
+        std::variant<NodeStmntExit*, NodeStmntLet*, NodeIf*> var;
     };
 
     struct NodeProg
@@ -103,7 +100,7 @@ class Parser {
 public:
     inline explicit Parser(std::vector<Token> tokens)
         : m_tokens(std::move(tokens)),
-        m_allocator(1024 * 1024 * 4) {}
+        m_allocator(1024 * 1024 * 8) {}
 
     std::optional<NodeTerm*> parse_term() {
         if (auto int_lit = tryConsume(TokenType::_int_lit)) {
@@ -138,22 +135,38 @@ public:
     }
 std::optional<NodeCond*> parse_cond(){
 
-    std::optional<NodeTerm*> term = parse_term();
-    if (!term.has_value()) {
+    auto node_cond = m_allocator.alloc<NodeBool>();
+    
+    auto expr_lhs = parser_expr();
 
-            return {};
-        }
-    auto node_cond = m_allocator.alloc<NodeCond>();
-    auto expr_lhs = m_allocator.alloc<NodeExpr>();
+    if (!expr_lhs.has_value())
+    {
+        std::cerr << "Expected expr1" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    
     Token cond = consume();
-    auto expr_rhs = m_allocator.alloc<NodeExpr>();
-    node_cond->var->expr1 = expr_lhs;
-    node_cond->var->expr2 = expr_rhs;
-    node_cond->var->bool1 = cond;
+    if (cond.type != TokenType::lt && cond.type != TokenType::gt && cond.type != TokenType::_equals) {
+        std::cerr << "Expected comparison operator (<, >, or ==)" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
-    return node_cond;
+    auto expr_rhs = parser_expr();
+    if (!expr_rhs.has_value()) {
+        std::cerr << "Can't parse right-hand side expression" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
+    node_cond->expr1 = expr_lhs.value();
+    node_cond->expr2 = expr_rhs.value();
+    node_cond->bool1 = cond;
+    
+    auto node_cond1 = m_allocator.alloc<NodeCond>();
+    node_cond1->var = node_cond;
+    return node_cond1;
 }
+
+
 std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
 
         std::optional<NodeTerm*> term = parse_term();
@@ -271,17 +284,22 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
             node_stmnt->var = node_stmnt_exit;
             return node_stmnt;
         } else if (tryConsume(TokenType::_if).has_value()) {
-            auto node_if = m_allocator.alloc<NodeStmntIf>();
+            auto node_if = m_allocator.alloc<NodeIf>();
             tryConsume(TokenType::openParen, "Expected '('");
             if (auto node_cond = parse_cond()) {
                 tryConsume(TokenType::closeParen, "Expected ')'");
-                node_if->expr = node_cond.value();
+                node_if->cond = node_cond.value();
                 tryConsume(TokenType::openCurly, "Expected '{'");
-                auto true_expr = parser_expr();
+                auto true_expr = parse_stmnt();
+                if (!true_expr.has_value())
+                {
+                    std::cerr<<"NO"<<std::endl;
+                }
+                
                 tryConsume(TokenType::closeCurly, "Expected '}'");
                 tryConsume(TokenType::_else, "Expected else");
                 tryConsume(TokenType::openCurly, "Expected '{'");
-                auto false_expr = parser_expr();
+                auto false_expr = parse_stmnt();
                 tryConsume(TokenType::closeCurly, "Expected '}'");
 
                 node_if->trueExpr = true_expr.value();

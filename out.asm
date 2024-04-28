@@ -1,49 +1,27 @@
 global _start
 _start:
-    mov rax, 3
+    mov rax, 32
     push rax
-    mov rax, 3
-    push rax
-    pop rax
-    pop rbx
-    add rax, rbx
-    push rax
-    mov rax, 3
+    mov rax, 5
     push rax
     pop rax
     pop rbx
-    add rax, rbx
+    cmp rbx, rax
+    jg condition_true
+    jmp condition_end
+condition_true:
+    mov rax, 6
     push rax
-    mov rax, 3
+    jmp if_end
+condition_end:
+    mov rax, 5
     push rax
-    mov rax, 3
-    push rax
-    push QWORD [rsp + 16]
+    mov rax, 60
+    pop rdi
+    syscall
+if_end:
+    push QWORD [rsp + 0]
 
-    pop rax
-    pop rbx
-    imul rax, rbx
-    push rax
-    push QWORD [rsp + 8]
-
-    pop rax
-    pop rbx
-    imul rax, rbx
-    push rax
-    mov rax, 3
-    push rax
-    pop rbx
-    pop rax
-    cqo
-    idiv rbx
-    push rax
-    mov rax, 3
-    push rax
-    pop rbx
-    pop rax
-    cqo
-    idiv rbx
-    push rax
     mov rax, 60
     pop rdi
     syscall

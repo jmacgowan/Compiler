@@ -1,7 +1,6 @@
-let x = 3 + 3 + 3;
-let y = 3;
-if (x < y) {
-    return y;
-} else {
-    return x;
-}
+if (32>5) {
+    let x = 6;
+    return x*7;
+    } else {
+        return y;}
+return x;

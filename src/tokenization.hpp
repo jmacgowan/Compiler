@@ -121,6 +121,7 @@ public:
                         while (peek().has_value() && (std::isalnum(peek().value()) || peek().value() == '_')) {
                             buf.push_back(consume());
                         }
+
                         if (buf == "return") {
                             tokens.push_back({.type = TokenType::_return});
                         } else if (buf == "let") {
