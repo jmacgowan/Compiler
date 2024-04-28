@@ -29,10 +29,16 @@ struct Token {
 std::optional<int> bin_prec(TokenType type){
     switch (type)
     {
+    case TokenType::minus:
+        return 1;
+        break;
     case TokenType::plus:
         return 1;
         break;
     case TokenType::multi:
+        return 2;
+        break;
+    case TokenType::divide:
         return 2;
         break;
     default:

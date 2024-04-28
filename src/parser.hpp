@@ -81,12 +81,12 @@ public:
         }
     }
 
-std::optional<NodeExpr*> parser_expr(int min_prec) {
+std::optional<NodeExpr*> parser_expr(int max_prec) {
 
         std::optional<NodeTerm*> term = parse_term();
         if (!term.has_value()) {
             if (tryConsume(TokenType::openParen)) {
-            auto nested_expr = parser_expr(0);
+            auto nested_expr = parser_expr(4);
             tryConsume(TokenType::closeParen, "Expected ')' to close nested expression");
             return nested_expr;
         }
@@ -95,60 +95,66 @@ std::optional<NodeExpr*> parser_expr(int min_prec) {
 
         while (true)
         {
-            if (term)
-            {
-            
+           
            std::optional<Token> curr_token = peak();
            std::optional<int> prec;
-           if (!curr_token.has_value())
+           if (curr_token.has_value())
            {
                 prec = bin_prec(curr_token->type);
-                if (!prec.has_value() || prec<min_prec)
+                if (!prec.has_value() || prec<max_prec)
                 {
                     break;
                 }   
+           } else
+           {
+            break;
            }
-        }
+           
 
+        int prec_new_val = prec.value() + 1;
+        auto expr_rhs = parser_expr(prec_new_val);
+
+        if (!expr_rhs.has_value())
+        {
+            perror("No");
+            exit(EXIT_FAILURE);
+        }
+        auto expr = m_allocator.alloc<BinExpr>();
         if (tryConsume(TokenType::plus)) {
-            auto bin_expr = m_allocator.alloc<BinExpr>();
             auto bin_expr_add = m_allocator.alloc<BinExprAdd>();
             auto lhs_expr = m_allocator.alloc<NodeExpr>();
             lhs_expr->var = term.value();
             bin_expr_add->lhs = lhs_expr;
             if (auto rhs = parser_expr(1)) {
                 bin_expr_add->rhs = rhs.value();
-                bin_expr->var = bin_expr_add;
-                auto expr = m_allocator.alloc<NodeExpr>();
-                expr->var = bin_expr;
-                return expr;
+                expr->var = bin_expr_add;
+                auto expr2 = m_allocator.alloc<NodeExpr>();
+                expr2->var = expr;
+                return expr2;
             }
             std::cerr << "Invalid right-hand side expression after '+'" << std::endl;
             exit(EXIT_FAILURE);
         } else if (tryConsume(TokenType::multi))
         {
-            auto bin_expr = m_allocator.alloc<BinExpr>();
             auto bin_expr_multi = m_allocator.alloc<BinExprMulti>();
             auto lhs_expr = m_allocator.alloc<NodeExpr>();
             lhs_expr->var = term.value();
             bin_expr_multi->lhs = lhs_expr;
             if (auto rhs = parser_expr(2)) {
                 bin_expr_multi->rhs = rhs.value();
-                bin_expr->var = bin_expr_multi;
-                auto expr = m_allocator.alloc<NodeExpr>();
-                expr->var = bin_expr;
-                return expr;
+                expr->var = bin_expr_multi;
+                auto expr2 = m_allocator.alloc<NodeExpr>();
+                expr2->var = expr;
+                return expr2;
             }
             std::cerr << "Invalid right-hand side expression after '*'" << std::endl;
             exit(EXIT_FAILURE);
         } 
 
-        auto expr = m_allocator.alloc<NodeExpr>();
-        expr->var = term.value();
-        return expr;
+        expr_lhs->var = expr;
 }
          
-    return {};
+    return expr_lhs;
 }
 
 
