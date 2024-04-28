@@ -67,6 +67,12 @@
         NodeBool* var;
     };
     
+    struct NodeStmntIf
+    {
+        NodeCond* expr;
+        NodeExpr* trueExpr;
+        NodeExpr* falseExpr;
+    };
     struct NodeStmntExit
     {
         NodeExpr* expr;
@@ -85,7 +91,7 @@
 
     struct NodeStmnt
     {
-        std::variant<NodeStmntExit*, NodeStmntLet*> var;
+        std::variant<NodeStmntExit*, NodeStmntLet*, NodeStmntIf*> var;
     };
 
     struct NodeProg
@@ -252,14 +258,28 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
                 }
                 tryConsume(TokenType::closeParen, "Expected ')' after return statement");
             }  else if (tryConsume(TokenType::_if).has_value()) {
-            auto node_if = m_allocator.alloc<NodeCond>();
+            auto node_if = m_allocator.alloc<NodeStmntIf>();
+            tryConsume(TokenType::openParen, "Expected '('");
             if (auto node_cond = parse_cond()) {
+                tryConsume(TokenType::closeParen, "Expected ')'");
+                node_if->expr = node_cond.value();
+                tryConsume(TokenType::openCurly, "Expected '{'");
+                auto true_expr = parser_expr();
+                tryConsume(TokenType::closeCurly, "Expected '}'");
+                tryConsume(TokenType::_else, "Expected else");
+                tryConsume(TokenType::openCurly, "Expected '{'");
+                auto false_expr = parser_expr();
+                tryConsume(TokenType::closeCurly, "Expected '}'");
 
+                node_if->trueExpr = true_expr.value();
+                node_if->falseExpr= false_expr.value();
+                auto node_stmnt = m_allocator.alloc<NodeStmnt>();
+                node_stmnt->var = node_if;
+                return node_stmnt;
                 } else {
-                    std::cerr << "Invalid expression after '(' for return statement" << std::endl;
+                    std::cerr << "Invalid expression after '(' for conditional statement" << std::endl;
                     exit(EXIT_FAILURE);
                 }
-
             }else
             {
                 if (auto node_expr = parser_expr()) {

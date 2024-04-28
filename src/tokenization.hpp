@@ -23,7 +23,9 @@ enum class TokenType {
     _bool,
     gt,
     lt,
-    _equals
+    _equals,
+    openCurly,
+    closeCurly
 };
 
 
@@ -96,6 +98,14 @@ public:
                 case '>':
                     consume();
                     tokens.push_back({TokenType::gt});
+                    break;
+                case '{':
+                    consume();
+                    tokens.push_back({TokenType::openCurly});
+                    break;
+                case '}':
+                    consume();
+                    tokens.push_back({TokenType::closeCurly});
                     break;
                 
                 default:
