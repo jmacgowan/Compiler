@@ -104,5 +104,10 @@
     "streambuf": "cpp",
     "typeinfo": "cpp",
     "variant": "cpp"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "[cpp]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
   }
 }

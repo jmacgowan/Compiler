@@ -3,7 +3,7 @@
 #include <string>
 #include <sstream> // Needed for std::stringstream
 #include <vector>
-#include <unordered_map>
+#include <map>
 #include <cassert>
 
 class Generator {
@@ -110,7 +110,7 @@ public:
         std::visit(visitor, expr->var);
     }
 
-void gen_cond(const NodeCond* cond){
+void gen_cond(const NodeCond* cond, const std::string& condition_true_label, const std::string& condition_end_label) {
     gen_expr(cond->var->expr1);
     gen_expr(cond->var->expr2);
     m_output << "    pop rax\n"; // Right-hand side expression result
@@ -119,47 +119,60 @@ void gen_cond(const NodeCond* cond){
     // Compare the values in rax and rbx based on the condition operator
     if (cond->var->bool1.type == TokenType::lt) {
         m_output << "    cmp rbx, rax\n";
-        m_output << "    jl condition_true\n"; // Jump if less
+        m_output << "    jl " << condition_true_label << "\n"; // Jump if less
     } else if (cond->var->bool1.type == TokenType::gt) {
         m_output << "    cmp rbx, rax\n";
-        m_output << "    jg condition_true\n"; // Jump if greater
+        m_output << "    jg " << condition_true_label << "\n"; // Jump if greater
     } else if (cond->var->bool1.type == TokenType::_equals) {
         m_output << "    cmp rbx, rax\n";
-        m_output << "    je condition_true\n"; // Jump if equal
+        m_output << "    je " << condition_true_label << "\n"; // Jump if equal
     }
 
     // If the condition is false, jump to the end of the if statement
-    m_output << "    jmp condition_end\n";
-    m_output << "condition_true:\n";
-
+    m_output << "    jmp " << condition_end_label << "\n";
+    m_output << condition_true_label << ":\n";
 }
 
 void gen_if(const NodeIf* if_stmt) {
-    gen_cond(if_stmt->cond);
+    std::string condition_true_label = "condition_true_" + std::to_string(m_if_label_count);
+    std::string condition_end_label = "condition_end_" + std::to_string(m_if_label_count);
+    std::string if_end_label = "if_end_" + std::to_string(m_if_label_count);
 
+    gen_cond(if_stmt->cond, condition_true_label, condition_end_label);
+
+    m_output << condition_true_label << ":\n";
     for (const auto& stmnt : if_stmt->trueStmnts->stmnts) {
         gen_stmnt(stmnt);
     }
 
     if (!if_stmt->falseStmnts->stmnts.empty()) {
-        m_output << "    jmp if_end\n"; 
-        m_output << "condition_end:\n";
+        m_output << "    jmp " << if_end_label << "\n"; 
+        m_output << condition_end_label << ":\n";
         for (const auto& stmnt : if_stmt->falseStmnts->stmnts) {
             gen_stmnt(stmnt);
         }
     }
 
-    m_output << "if_end:\n";
+    m_output << if_end_label << ":\n";
+
+    m_if_label_count++;
 }
     void gen_stmnt(const NodeStmnt* stmnt) {
         struct StmntVisitor {
             Generator* gen;
 
+            
+            void operator()(const NodeStmnts* stmnts) {
+            for (const auto& stmnt : stmnts->stmnts) {
+                gen->gen_stmnt(stmnt);
+                }
+            }
+
             void operator()(const NodeStmntExit* stmnt_exit) {
                 gen->gen_expr(stmnt_exit->expr);
                 gen->m_output << "    mov rax, 60\n";
                 gen->pop("rdi");
-                gen->m_output << "    syscall\n";
+                gen->m_output << "    syscall\n"; 
             }
 
             void operator()(const NodeStmntLet* stmnt_let) {
@@ -217,5 +230,6 @@ private:
     const NodeProg m_prog;
     std::stringstream m_output;
     size_t m_stack_size= 0;
-    std::unordered_map<std::string, Var> m_vars {};
+    std::map<std::string, Var> m_vars {};
+    int m_if_label_count = 0;
 };
