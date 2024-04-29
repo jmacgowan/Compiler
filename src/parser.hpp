@@ -298,21 +298,24 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
         } else if (tryConsume(TokenType::_if).has_value()) {
             auto node_if = m_allocator.alloc<NodeIf>();
             tryConsume(TokenType::openParen, "Expected '('");
-
             if (auto node_cond = parse_cond()) {
                 tryConsume(TokenType::closeParen, "Expected ')'");
                 node_if->cond = node_cond.value();
                 tryConsume(TokenType::openCurly, "Expected '{'");
-
-                NodeStmntScope* stmntsTrue = parseStmnts().value();
+                NodeStmntScope* stmntsTrue = parseStmnts().value();    
+                tryConsume(TokenType::closeCurly, "Expected '}'");
+                NodeStmntScope* stmntsFalse;
+                if (tryConsume(TokenType::_else).has_value())
+                {
+                    tryConsume(TokenType::openCurly, "Expected '{'");
+                    stmntsFalse = parseStmnts().value();
+                tryConsume(TokenType::closeCurly, "Expected '}'");
+                } else
+                {
+                    stmntsFalse = m_allocator.alloc<NodeStmntScope>();
+                }
                 
-                tryConsume(TokenType::closeCurly, "Expected '}'");
-                tryConsume(TokenType::_else, "Expected else");
-                tryConsume(TokenType::openCurly, "Expected '{'");
-                NodeStmntScope* stmntsFalse = parseStmnts().value();
-        
-                tryConsume(TokenType::closeCurly, "Expected '}'");
-
+               
                 node_if->trueStmnts = m_allocator.alloc<NodeStmntScope>();
                 node_if->trueStmnts->stmnts = std::move(stmntsTrue->stmnts);
 

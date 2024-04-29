@@ -144,16 +144,16 @@ void gen_if(const NodeIf* if_stmt) {
 
     if (!if_stmt->falseStmnts->stmnts.empty()) {
         m_output << "    jmp " << if_end_label << "\n"; 
-        m_output << condition_end_label << ":\n";
-        for (const auto& stmnt : if_stmt->falseStmnts->stmnts) {
-            gen_stmnt(stmnt);
-        }
     }
-
+    m_output << condition_end_label << ":\n";
+    for (const auto& stmnt : if_stmt->falseStmnts->stmnts) {
+        gen_stmnt(stmnt);
+    }
     m_output << if_end_label << ":\n";
 
     m_if_label_count++;
 }
+
     void gen_stmnt(const NodeStmnt* stmnt) {
         struct StmntVisitor {
             Generator* gen;
