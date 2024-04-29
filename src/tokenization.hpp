@@ -25,7 +25,8 @@ enum class TokenType {
     lt,
     _equals,
     openCurly,
-    closeCurly
+    closeCurly,
+    _for
 };
 
 
