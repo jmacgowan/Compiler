@@ -293,12 +293,12 @@ std::optional<NodeStmnt*> parse_comment() {
         }
         
         if (token->type == TokenType::comment_end) {
-            consume(); // Consume the comment end token
+            consume(); 
             break;
         }
         
         comment_text += token->value.value();
-        consume(); // Consume the token
+        consume(); 
     }
 
     auto node_comment = m_allocator.alloc<NodeComment>();

@@ -12,19 +12,19 @@ _start:
     jl condition_true_1
     jmp condition_end_1
 condition_true_1:
-    mov rax, 5
+    mov rax, 6
     push rax
-    mov rax, 60
-    pop rdi
-    syscall
+    pop rax
+    mov QWORD [rsp + 24], rax
     add rsp,0
 condition_end_1:
+; hello
     mov rax, 0
     push rax
     mov rax, 5
     push rax
     add rsp,8
-    mov rax, 7
+    mov rax, 8
     push rax
     mov rax, 60
     pop rdi

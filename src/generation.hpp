@@ -132,7 +132,6 @@ void gen_cond(const NodeCond* cond, const std::string& condition_true_label, con
 }
 
 void gen_if(const NodeIf* if_stmt) {
-    // Increment the if label count before using it
     m_if_label_count++;
 
     std::string condition_true_label = "condition_true_" + std::to_string(m_if_label_count);
@@ -141,10 +140,8 @@ void gen_if(const NodeIf* if_stmt) {
 
     gen_cond(if_stmt->cond, condition_true_label, condition_end_label);
 
-    // Generate code for the true branch
     gen_stmnt(if_stmt->trueStmnts);
 
-    // Label for the end of the if statement
     m_output << condition_end_label << ":\n";
 }  void gen_stmnt(const NodeStmnt* stmnt) {
         struct StmntVisitor {
