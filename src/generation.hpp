@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <cassert>
+#include <algorithm>
 
 class Generator {
 public:
@@ -18,18 +19,17 @@ public:
             TermVisitor(Generator* gen) : gen(gen) {}
 
         void operator()(const NodeTermIdent* term_ident) {
-         if (!gen->m_vars.contains(term_ident->ident.value.value()))
-                {
+
+            auto it  = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&] (const Var& var){
+                return var.name == term_ident->ident.value.value();
+            });
+            if (it == gen->m_vars.cend()){
                     std::cerr << "Unknown Identifier" << term_ident->ident.value.value();
-                exit(EXIT_FAILURE);
-                } else
-                {
-                    const auto& var = gen->m_vars.at(term_ident->ident.value.value());
-                    std::stringstream  offset;
-                    offset << "QWORD [rsp + " << 8 * (gen->m_stack_size - var.stack_loc -1) << "]\n";
-                    gen->push(offset.str());
-                }
-                
+                    exit(EXIT_FAILURE);
+                    } 
+                std::stringstream  offset;
+                offset << "QWORD [rsp + " << 8 * (gen->m_stack_size - (*it).stack_loc -1) << "]\n";
+                gen->push(offset.str()); 
         }
         void operator()(const NodeTermIntLit* term_int_lit) {
                 gen->m_output << "    mov rax, " << term_int_lit->_int_lit.value.value() << "\n";
@@ -162,7 +162,7 @@ void gen_if(const NodeIf* if_stmt) {
             Generator* gen;
 
             
-            void operator()(const NodeStmnts* stmnts) {
+            void operator()(const NodeStmntScope* stmnts) {
             for (const auto& stmnt : stmnts->stmnts) {
                 gen->gen_stmnt(stmnt);
                 }
@@ -223,6 +223,7 @@ private:
 
     struct Var
     {
+        std::string name;
         size_t stack_loc;
     };
     
@@ -230,6 +231,6 @@ private:
     const NodeProg m_prog;
     std::stringstream m_output;
     size_t m_stack_size= 0;
-    std::map<std::string, Var> m_vars {};
+    std::vector<Var> m_vars {};
     int m_if_label_count = 0;
 };

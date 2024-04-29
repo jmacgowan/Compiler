@@ -81,7 +81,7 @@
         NodeExpr* expr;
     };
 
-    struct NodeStmnts
+    struct NodeStmntScope
     {
         std::vector<NodeStmnt*> stmnts;
     };
@@ -89,13 +89,13 @@
     struct NodeIf
     {
         NodeCond* cond;
-        NodeStmnts* trueStmnts;
-        NodeStmnts* falseStmnts;
+        NodeStmntScope* trueStmnts;
+        NodeStmntScope* falseStmnts;
     };
 
     struct NodeStmnt
     {
-        std::variant<NodeStmntExit*, NodeStmntLet*, NodeIf*, NodeStmnts*> var;
+        std::variant<NodeStmntExit*, NodeStmntLet*, NodeIf*, NodeStmntScope*> var;
     };
 
     struct NodeProg
@@ -299,19 +299,19 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
                 node_if->cond = node_cond.value();
                 tryConsume(TokenType::openCurly, "Expected '{'");
 
-                NodeStmnts* stmntsTrue = parseStmnts().value();
+                NodeStmntScope* stmntsTrue = parseStmnts().value();
                 
                 tryConsume(TokenType::closeCurly, "Expected '}'");
                 tryConsume(TokenType::_else, "Expected else");
                 tryConsume(TokenType::openCurly, "Expected '{'");
-                NodeStmnts* stmntsFalse = parseStmnts().value();
+                NodeStmntScope* stmntsFalse = parseStmnts().value();
         
                 tryConsume(TokenType::closeCurly, "Expected '}'");
 
-                node_if->trueStmnts = m_allocator.alloc<NodeStmnts>();
+                node_if->trueStmnts = m_allocator.alloc<NodeStmntScope>();
                 node_if->trueStmnts->stmnts = std::move(stmntsTrue->stmnts);
 
-                node_if->falseStmnts = m_allocator.alloc<NodeStmnts>();
+                node_if->falseStmnts = m_allocator.alloc<NodeStmntScope>();
                 node_if->falseStmnts->stmnts = std::move(stmntsFalse->stmnts);
 
                 auto node_stmnt = m_allocator.alloc<NodeStmnt>();
@@ -323,7 +323,7 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
                 }
             } else if (tryConsume(TokenType::openCurly).has_value()) {
                 auto node_stmnt = m_allocator.alloc<NodeStmnt>();
-                NodeStmnts* stmnts = parseStmnts().value();
+                NodeStmntScope* stmnts = parseStmnts().value();
                 node_stmnt->var = stmnts;
                 tryConsume(TokenType::closeCurly, "Expected '}'");
                 printf("here");
@@ -332,8 +332,8 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
         return {};
     }
 
-    std::optional<NodeStmnts*> parseStmnts(){
-        auto stmntBlock = m_allocator.alloc<NodeStmnts>();
+    std::optional<NodeStmntScope*> parseStmnts(){
+        auto stmntBlock = m_allocator.alloc<NodeStmntScope>();
         while (true) {
             auto stmnt = parse_stmnt();
             if (!stmnt.has_value())
