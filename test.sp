@@ -1,8 +1,9 @@
+
 if (32>5) {
     let x = 5;
-    let v = 6;
+    let y = 6;
     } else {
-        let y = 6;
+        return 4;
         }
 
 if (32>5) {

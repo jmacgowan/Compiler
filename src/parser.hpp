@@ -326,7 +326,6 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
                 NodeStmntScope* stmnts = parseStmnts().value();
                 node_stmnt->var = stmnts;
                 tryConsume(TokenType::closeCurly, "Expected '}'");
-                printf("here");
                 return node_stmnt;
             } 
         return {};

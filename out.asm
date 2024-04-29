@@ -17,8 +17,11 @@ condition_true_0:
     push rax
     jmp if_end_0
 condition_end_0:
-    mov rax, 6
+    mov rax, 4
     push rax
+    mov rax, 60
+    pop rdi
+    syscall
 if_end_0:
     mov rax, 32
     push rax

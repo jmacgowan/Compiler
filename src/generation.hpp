@@ -113,22 +113,20 @@ public:
 void gen_cond(const NodeCond* cond, const std::string& condition_true_label, const std::string& condition_end_label) {
     gen_expr(cond->var->expr1);
     gen_expr(cond->var->expr2);
-    m_output << "    pop rax\n"; // Right-hand side expression result
-    m_output << "    pop rbx\n"; // Left-hand side expression result
+    m_output << "    pop rax\n"; 
+    m_output << "    pop rbx\n"; 
 
-    // Compare the values in rax and rbx based on the condition operator
     if (cond->var->bool1.type == TokenType::lt) {
         m_output << "    cmp rbx, rax\n";
-        m_output << "    jl " << condition_true_label << "\n"; // Jump if less
+        m_output << "    jl " << condition_true_label << "\n"; 
     } else if (cond->var->bool1.type == TokenType::gt) {
         m_output << "    cmp rbx, rax\n";
-        m_output << "    jg " << condition_true_label << "\n"; // Jump if greater
+        m_output << "    jg " << condition_true_label << "\n";
     } else if (cond->var->bool1.type == TokenType::_equals) {
         m_output << "    cmp rbx, rax\n";
-        m_output << "    je " << condition_true_label << "\n"; // Jump if equal
+        m_output << "    je " << condition_true_label << "\n";
     }
 
-    // If the condition is false, jump to the end of the if statement
     m_output << "    jmp " << condition_end_label << "\n";
     m_output << condition_true_label << ":\n";
 }
@@ -140,7 +138,6 @@ void gen_if(const NodeIf* if_stmt) {
 
     gen_cond(if_stmt->cond, condition_true_label, condition_end_label);
 
-    m_output << condition_true_label << ":\n";
     for (const auto& stmnt : if_stmt->trueStmnts->stmnts) {
         gen_stmnt(stmnt);
     }
@@ -163,9 +160,12 @@ void gen_if(const NodeIf* if_stmt) {
 
             
             void operator()(const NodeStmntScope* stmnts) {
+            
+                gen->begin_scope();
             for (const auto& stmnt : stmnts->stmnts) {
                 gen->gen_stmnt(stmnt);
-                }
+            }
+                gen->end_scope();
             }
 
             void operator()(const NodeStmntExit* stmnt_exit) {
@@ -177,19 +177,21 @@ void gen_if(const NodeIf* if_stmt) {
 
             void operator()(const NodeStmntLet* stmnt_let) {
                 
-                if (gen->m_vars.contains(stmnt_let->ident.value.value())) {
-                std::cerr << "Identifier already used: " << stmnt_let->ident.value.value();
+            auto it  = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&] (const Var& var){
+                return var.name == stmnt_let->ident.value.value();
+            });
+            if (!(it == gen->m_vars.cend())){
+                std::cerr << "Identifier already used" << stmnt_let->ident.value.value();
                 exit(EXIT_FAILURE);
-                } else {
-                    gen -> m_vars.insert({stmnt_let->ident.value.value(), Var {.stack_loc = gen->m_stack_size}});
-                    gen -> gen_expr(stmnt_let->expr);
-                }
+                }  
+               
+            gen -> m_vars.push_back({.name = stmnt_let->ident.value.value(), .stack_loc = gen->m_stack_size});
+            gen -> gen_expr(stmnt_let->expr);
+    
             }
             void operator()(const NodeIf* stmnt_if) {
 
                 gen->gen_if(stmnt_if);
-                
- 
             }
 
         };
@@ -221,6 +223,14 @@ private:
         m_stack_size--;
     }
 
+    void begin_scope(){
+        m_scopes.push_back(m_vars.size());
+    }
+
+    void end_scope(){
+
+    }
+
     struct Var
     {
         std::string name;
@@ -232,5 +242,6 @@ private:
     std::stringstream m_output;
     size_t m_stack_size= 0;
     std::vector<Var> m_vars {};
+    std::vector<size_t> m_scopes {};
     int m_if_label_count = 0;
 };

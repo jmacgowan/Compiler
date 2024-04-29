@@ -228,4 +228,19 @@ CMakeFiles/spark.dir/src/Spark.cpp.o
  /usr/include/c++/10/bits/erase_if.h
  /usr/include/c++/10/cassert
  /usr/include/assert.h
+ /usr/include/c++/10/algorithm
+ /usr/include/c++/10/bits/ranges_algo.h
+ /usr/include/c++/10/bits/ranges_algobase.h
+ /usr/include/c++/10/iterator
+ /usr/include/c++/10/bits/stream_iterator.h
+ /usr/include/c++/10/ranges
+ /usr/include/c++/10/bits/refwrap.h
+ /usr/include/c++/10/pstl/glue_algorithm_defs.h
+ /usr/include/c++/10/functional
+ /usr/include/c++/10/bits/std_function.h
+ /usr/include/c++/10/unordered_map
+ /usr/include/c++/10/bits/hashtable.h
+ /usr/include/c++/10/bits/hashtable_policy.h
+ /usr/include/c++/10/bits/unordered_map.h
+ /usr/include/c++/10/pstl/execution_defs.h
 
