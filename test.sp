@@ -1,8 +1,9 @@
-let i = 0;
-let x = 6;
-if (3>6){
-    return 5;
-} else {
-    return 7;
+let c = 6;
+{
+    let z = 121;
 }
-return x;
+let y = 0;
+{
+    let h = 5;
+}
+return z;

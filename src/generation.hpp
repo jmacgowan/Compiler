@@ -142,34 +142,15 @@ void gen_if(const NodeIf* if_stmt) {
 
     if (!if_stmt->falseStmnts->stmnts.empty()) {
         m_output << "    jmp " << if_end_label << "\n"; 
+        m_output << condition_end_label << ":\n";
+        for (const auto& stmnt : if_stmt->falseStmnts->stmnts) {
+            gen_stmnt(stmnt);
+        }
     }
-    m_output << condition_end_label << ":\n";
-    for (const auto& stmnt : if_stmt->falseStmnts->stmnts) {
-        gen_stmnt(stmnt);
-    }
+
     m_output << if_end_label << ":\n";
 
     m_if_label_count++;
-}
-void gen_for(const NodeStmntFor* for_stmnt) {
-    // Begin for loop initialization
-    m_output << "    mov DWORD [i], 0\n"; // Initialize i to 0
-
-    // For loop condition check
-    m_output << "for_loop:\n";
-    m_output << "    mov eax, DWORD [i]\n"; // Load i into eax register
-    m_output << "    cmp eax, 4\n"; // Compare i with 4
-    m_output << "    jge end_for\n"; // If i >= 4, exit the loop
-
-    // Body of the for loop
-    // You can add the code to execute inside the loop here
-
-    // Increment i
-    m_output << "    inc DWORD [i]\n"; // Increment i
-    m_output << "    jmp for_loop\n"; // Jump back to the beginning of the loop
-
-    // End of the for loop
-    m_output << "end_for:\n";
 }
     void gen_stmnt(const NodeStmnt* stmnt) {
         struct StmntVisitor {
