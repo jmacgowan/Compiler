@@ -26,7 +26,9 @@ enum class TokenType {
     _equals,
     openCurly,
     closeCurly,
-    _for
+    _for,
+    comment_start,
+    comment_end
 };
 
 
@@ -127,6 +129,8 @@ public:
                             tokens.push_back({.type = TokenType::_return});
                         } else if (buf == "let") {
                             tokens.push_back({.type = TokenType::let});
+                        }  else if (buf == "for") {
+                            tokens.push_back({.type = TokenType::_for});
                         }  else if (buf == "if") {
                             tokens.push_back({.type = TokenType::_if});
                         }  else if (buf == "else") {
@@ -137,6 +141,10 @@ public:
                             tokens.push_back({.type = TokenType::_bool, .value = "true"});}  
                         else if (buf == "false") {
                             tokens.push_back({.type = TokenType::_bool, .value = "false"}); 
+                        }else if (buf == "/*") {
+                            tokens.push_back({.type = TokenType::comment_start}); 
+                        }else if (buf == "*/") {
+                            tokens.push_back({.type = TokenType::comment_end}); 
                         } else {
                             tokens.push_back({.type = TokenType::ident, .value = buf});
                         }

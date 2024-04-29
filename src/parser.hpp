@@ -17,6 +17,7 @@
 
     struct NodeExpr;
 
+    struct NodeStmntScope;
 
     struct NodeTermParen
     {
@@ -82,6 +83,10 @@
     struct NodeStmntExit
     {
         NodeExpr* expr;
+    }; 
+    struct NodeComment
+    {
+        std::string string;
     };
     struct NodeStmntLet
     {
@@ -109,7 +114,7 @@
 
     struct NodeStmnt
     {
-        std::variant<NodeStmntExit*, NodeStmntLet*, NodeIf*, NodeStmntScope*, NodeStmntUpdate*, NodeStmntFor*> var;
+        std::variant<NodeStmntExit*, NodeStmntLet*, NodeIf*, NodeStmntScope*, NodeStmntUpdate*, NodeStmntFor*, NodeComment*> var;
     };
 
     struct NodeProg
@@ -268,7 +273,7 @@ std::optional<NodeStmnt*> parse_let_statement() {
     if (!let_token.has_value()) return {};
 
     auto ident = tryConsume(TokenType::ident, "Expected Identifier after let");
-    tryConsume(TokenType::eq, "Expected '=' after ident");
+    tryConsume(TokenType::eq, "Expected '=' after initialization");
 
     if (auto node_expr = parser_expr()) {
         tryConsume(TokenType::semi, "Expected ';' after declaration");
@@ -357,6 +362,18 @@ std::optional<NodeStmntScope*> parseStmnts() {
 
     return stmntBlock;
 }
+std::optional<NodeStmntScope*> parse_comment() {
+    auto node_stmnt = m_allocator.alloc<NodeStmnt>();
+    auto if_token = tryConsume(TokenType::comment_start);
+    if (!if_token.has_value()) return {};
+    while (!tryConsume(TokenType::comment_end))
+    {
+        
+    }
+    
+
+    return {};
+}
 
 std::optional<NodeStmnt*> parse_block_statement() {
     if (!tryConsume(TokenType::openCurly).has_value()) {
@@ -394,13 +411,12 @@ std::optional<NodeStmnt*> parse_for_statement() {
     if (!_for.has_value()) {
         return {};
     }
-    tryConsume(TokenType::openCurly, "Expected '(' after for");
+    tryConsume(TokenType::openParen, "Expected '(' after for");
     auto node_expr = parse_stmnt();
     if (!node_expr) {
         std::cerr << "Invalid expression after '('." << std::endl;
         exit(EXIT_FAILURE);
     } 
-    tryConsume(TokenType::semi, "Expected ';' after expression");
     auto node_cond = parse_cond();
     if (!node_expr) {
         std::cerr << "Invalid condition" << std::endl;
@@ -412,7 +428,6 @@ std::optional<NodeStmnt*> parse_for_statement() {
         std::cerr << "Invalid update expression in for" << std::endl;
         exit(EXIT_FAILURE);
     } 
-    tryConsume(TokenType::semi, "Expected ';' after condition");
     tryConsume(TokenType::closeParen, "Expected ')' after final expression");
     tryConsume(TokenType::openCurly, "Expected statement block");
     auto node_block = parseStmnts();
@@ -441,7 +456,10 @@ std::optional<NodeStmnt*> parse_stmnt() {
         return assignment_stmnt;
     } else if(auto for_stmnt = parse_for_statement()){
         return for_stmnt;
+    } else if(auto commment = parse_comment()){
+        return comment;
     }
+    
     
     return {};
 }

@@ -144,16 +144,34 @@ void gen_if(const NodeIf* if_stmt) {
 
     if (!if_stmt->falseStmnts->stmnts.empty()) {
         m_output << "    jmp " << if_end_label << "\n"; 
+        m_output << condition_end_label << ":\n";
+        for (const auto& stmnt : if_stmt->falseStmnts->stmnts) {
+            gen_stmnt(stmnt);
+        }
     }
-    m_output << condition_end_label << ":\n";
-    for (const auto& stmnt : if_stmt->falseStmnts->stmnts) {
-        gen_stmnt(stmnt);
-    }
+
     m_output << if_end_label << ":\n";
 
     m_if_label_count++;
 }
+void gen_for(const NodeStmntFor* for_stmnt) {
+    
+    std::string condition_true_label = "condition_true_" + std::to_string(m_if_label_count);
+    std::string condition_end_label = "condition_end_" + std::to_string(m_if_label_count);
+    std::string loop_check_label = "loop_check_" + std::to_string(m_if_label_count);
 
+    m_output << loop_check_label << ":\n";
+
+    gen_cond(for_stmnt->cond, condition_true_label, condition_end_label);
+    for (const auto& stmnt : for_stmnt->stmnts->stmnts) {
+        gen_stmnt(stmnt);
+    }
+    gen_stmnt(for_stmnt->update);
+    m_output << "    jmp " << loop_check_label << "\n";
+
+    m_output << condition_end_label << ":\n";
+    m_if_label_count++;
+}
     void gen_stmnt(const NodeStmnt* stmnt) {
         struct StmntVisitor {
             Generator* gen;
@@ -208,6 +226,12 @@ void gen_if(const NodeIf* if_stmt) {
                 
                 gen->gen_if(stmnt_if);
             }
+            
+            void operator()(const NodeStmntFor* stmnt_for) {
+               gen->gen_for(stmnt_for);
+                
+            }
+
             };
 
         StmntVisitor visitor{this};

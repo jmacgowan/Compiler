@@ -1,6 +1,4 @@
-if (5<4){
-    return 5;
-}
+let i = 0;
+let x = 6;
 
-for (let i = 0;i<3;i=i+1)
-return 4;
+return x;
