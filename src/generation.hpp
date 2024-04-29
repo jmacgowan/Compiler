@@ -135,42 +135,41 @@ void gen_if(const NodeIf* if_stmt) {
     std::string condition_true_label = "condition_true_" + std::to_string(m_if_label_count);
     std::string condition_end_label = "condition_end_" + std::to_string(m_if_label_count);
     std::string if_end_label = "if_end_" + std::to_string(m_if_label_count);
-
     gen_cond(if_stmt->cond, condition_true_label, condition_end_label);
-
     for (const auto& stmnt : if_stmt->trueStmnts->stmnts) {
         gen_stmnt(stmnt);
     }
 
     if (!if_stmt->falseStmnts->stmnts.empty()) {
         m_output << "    jmp " << if_end_label << "\n"; 
-        m_output << condition_end_label << ":\n";
-        for (const auto& stmnt : if_stmt->falseStmnts->stmnts) {
-            gen_stmnt(stmnt);
-        }
     }
-
+    m_output << condition_end_label << ":\n";
+    for (const auto& stmnt : if_stmt->falseStmnts->stmnts) {
+        gen_stmnt(stmnt);
+    }
     m_output << if_end_label << ":\n";
 
     m_if_label_count++;
 }
 void gen_for(const NodeStmntFor* for_stmnt) {
-    
-    std::string condition_true_label = "condition_true_" + std::to_string(m_if_label_count);
-    std::string condition_end_label = "condition_end_" + std::to_string(m_if_label_count);
-    std::string loop_check_label = "loop_check_" + std::to_string(m_if_label_count);
+    // Begin for loop initialization
+    m_output << "    mov DWORD [i], 0\n"; // Initialize i to 0
 
-    m_output << loop_check_label << ":\n";
+    // For loop condition check
+    m_output << "for_loop:\n";
+    m_output << "    mov eax, DWORD [i]\n"; // Load i into eax register
+    m_output << "    cmp eax, 4\n"; // Compare i with 4
+    m_output << "    jge end_for\n"; // If i >= 4, exit the loop
 
-    gen_cond(for_stmnt->cond, condition_true_label, condition_end_label);
-    for (const auto& stmnt : for_stmnt->stmnts->stmnts) {
-        gen_stmnt(stmnt);
-    }
-    gen_stmnt(for_stmnt->update);
-    m_output << "    jmp " << loop_check_label << "\n";
+    // Body of the for loop
+    // You can add the code to execute inside the loop here
 
-    m_output << condition_end_label << ":\n";
-    m_if_label_count++;
+    // Increment i
+    m_output << "    inc DWORD [i]\n"; // Increment i
+    m_output << "    jmp for_loop\n"; // Jump back to the beginning of the loop
+
+    // End of the for loop
+    m_output << "end_for:\n";
 }
     void gen_stmnt(const NodeStmnt* stmnt) {
         struct StmntVisitor {
