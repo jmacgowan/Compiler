@@ -72,10 +72,10 @@
     
     struct NodeStmntFor
     {
-        std::variant<NodeStmntLet*, NodeStmntUpdate*, NodeTermIdent*> expr;
-        NodeCond cond;
-        NodeStmntUpdate update;
-        NodeStmntScope stmnts;
+        NodeStmnt* expr;
+        NodeCond* cond;
+        NodeStmnt* update;
+        NodeStmntScope* stmnts;
 
     };
 
@@ -359,60 +359,73 @@ std::optional<NodeStmntScope*> parseStmnts() {
 }
 
 std::optional<NodeStmnt*> parse_block_statement() {
-    if (tryConsume(TokenType::openCurly).has_value()) {
-        auto stmnts = parseStmnts().value();
-        auto node_stmnt = m_allocator.alloc<NodeStmnt>();
-        node_stmnt->var = stmnts;
-        tryConsume(TokenType::closeCurly, "Expected '}'");
-        return node_stmnt;
+    if (!tryConsume(TokenType::openCurly).has_value()) {
+        return {};
     }
-    return {};
+    auto stmnts = parseStmnts().value();
+    auto node_stmnt = m_allocator.alloc<NodeStmnt>();
+    node_stmnt->var = stmnts;
+    tryConsume(TokenType::closeCurly, "Expected '}'");
+    return node_stmnt;
 }
 
 std::optional<NodeStmnt*> parse_assignment_statement() {
     auto ident = tryConsume(TokenType::ident);
-    if (ident.has_value()) {
-        tryConsume(TokenType::eq, "Expected '=' after ident");
-
-        if (auto node_expr = parser_expr()) {
-            tryConsume(TokenType::semi, "Expected ';' after expression");
-
-            auto node_stmnt_update = m_allocator.alloc<NodeStmntUpdate>();
-            node_stmnt_update->ident = ident.value();
-            node_stmnt_update->expr = node_expr.value();
-
-            auto node_stmnt = m_allocator.alloc<NodeStmnt>();
-            node_stmnt->var = node_stmnt_update;
-            return node_stmnt;
-        } else {
-            std::cerr << "Invalid expression after '='." << std::endl;
-            exit(EXIT_FAILURE);
+    if (!ident.has_value()) {
+       return {};
         }
+    tryConsume(TokenType::eq, "Expected '=' after ident");
+    if (auto node_expr = parser_expr()) {
+        tryConsume(TokenType::semi, "Expected ';' after expression");
+        auto node_stmnt_update = m_allocator.alloc<NodeStmntUpdate>();
+        node_stmnt_update->ident = ident.value();
+        node_stmnt_update->expr = node_expr.value();
+        auto node_stmnt = m_allocator.alloc<NodeStmnt>();
+        node_stmnt->var = node_stmnt_update;
+        return node_stmnt;
+    } else {
+        std::cerr << "Invalid expression after '='." << std::endl;
+        exit(EXIT_FAILURE);
     }
-    return {};
 }
 
 std::optional<NodeStmnt*> parse_for_statement() {
-    auto ident = tryConsume(TokenType::ident);
-    if (ident.has_value()) {
-        tryConsume(TokenType::eq, "Expected '=' after ident");
-
-        if (auto node_expr = parser_expr()) {
-            tryConsume(TokenType::semi, "Expected ';' after expression");
-
-            auto node_stmnt_update = m_allocator.alloc<NodeStmntUpdate>();
-            node_stmnt_update->ident = ident.value();
-            node_stmnt_update->expr = node_expr.value();
-
-            auto node_stmnt = m_allocator.alloc<NodeStmnt>();
-            node_stmnt->var = node_stmnt_update;
-            return node_stmnt;
-        } else {
-            std::cerr << "Invalid expression after '='." << std::endl;
-            exit(EXIT_FAILURE);
-        }
+    auto _for = tryConsume(TokenType::_for);
+    if (!_for.has_value()) {
+        return {};
     }
-    return {};
+    tryConsume(TokenType::openCurly, "Expected '(' after for");
+    auto node_expr = parse_stmnt();
+    if (!node_expr) {
+        std::cerr << "Invalid expression after '('." << std::endl;
+        exit(EXIT_FAILURE);
+    } 
+    tryConsume(TokenType::semi, "Expected ';' after expression");
+    auto node_cond = parse_cond();
+    if (!node_expr) {
+        std::cerr << "Invalid condition" << std::endl;
+        exit(EXIT_FAILURE);
+    } 
+    tryConsume(TokenType::semi, "Expected ';' after condition");
+    auto node_update = parse_stmnt();
+    if (!node_update) {
+        std::cerr << "Invalid update expression in for" << std::endl;
+        exit(EXIT_FAILURE);
+    } 
+    tryConsume(TokenType::semi, "Expected ';' after condition");
+    tryConsume(TokenType::closeParen, "Expected ')' after final expression");
+    tryConsume(TokenType::openCurly, "Expected statement block");
+    auto node_block = parseStmnts();
+    tryConsume(TokenType::closeCurly, "Expected '}' to close block");
+    auto node_stmnt_for = m_allocator.alloc<NodeStmntFor>();
+    node_stmnt_for->cond = node_cond.value();
+    node_stmnt_for->expr = node_expr.value();
+    node_stmnt_for->update = node_update.value();
+    node_stmnt_for->stmnts = node_block.value();
+    auto node_stmnt = m_allocator.alloc<NodeStmnt>();
+    node_stmnt->var = node_stmnt_for;
+    return node_stmnt;
+  
 }
 
 std::optional<NodeStmnt*> parse_stmnt() {
