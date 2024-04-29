@@ -132,27 +132,21 @@ void gen_cond(const NodeCond* cond, const std::string& condition_true_label, con
 }
 
 void gen_if(const NodeIf* if_stmt) {
+    // Increment the if label count before using it
+    m_if_label_count++;
+
     std::string condition_true_label = "condition_true_" + std::to_string(m_if_label_count);
     std::string condition_end_label = "condition_end_" + std::to_string(m_if_label_count);
     std::string if_end_label = "if_end_" + std::to_string(m_if_label_count);
+
     gen_cond(if_stmt->cond, condition_true_label, condition_end_label);
-    for (const auto& stmnt : if_stmt->trueStmnts->stmnts) {
-        gen_stmnt(stmnt);
-    }
 
-    if (!if_stmt->falseStmnts->stmnts.empty()) {
-        m_output << "    jmp " << if_end_label << "\n"; 
-        m_output << condition_end_label << ":\n";
-        for (const auto& stmnt : if_stmt->falseStmnts->stmnts) {
-            gen_stmnt(stmnt);
-        }
-    }
+    // Generate code for the true branch
+    gen_stmnt(if_stmt->trueStmnts);
 
-    m_output << if_end_label << ":\n";
-
-    m_if_label_count++;
-}
-    void gen_stmnt(const NodeStmnt* stmnt) {
+    // Label for the end of the if statement
+    m_output << condition_end_label << ":\n";
+}  void gen_stmnt(const NodeStmnt* stmnt) {
         struct StmntVisitor {
             Generator* gen;
 
@@ -208,8 +202,8 @@ void gen_if(const NodeIf* if_stmt) {
             }
             
             void operator()(const NodeStmntFor* stmnt_for) {
-               gen->gen_for(stmnt_for);
-                
+                assert(false);
+
             }
             void operator()(const NodeComment* stmnt_comment) {
                 gen->m_output << "; " << stmnt_comment->string << "\n";

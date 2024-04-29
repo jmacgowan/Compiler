@@ -108,8 +108,8 @@
     struct NodeIf
     {
         NodeCond* cond;
-        NodeStmntScope* trueStmnts;
-        NodeStmntScope* falseStmnts;
+        NodeStmnt* trueStmnts;
+        NodeStmnt* falseStmnts;
     };
 
     struct NodeStmnt
@@ -267,79 +267,6 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
 }
 
 
-    std::optional<NodeStmnt*> parse_stmnt() {
-        auto node_stmnt = m_allocator.alloc<NodeStmnt>();
-        if (tryConsume(TokenType::let).has_value()) {
-            auto ident = tryConsume(TokenType::ident, "Expected Identifier after let"); 
-                tryConsume(TokenType::eq, "Expected '=' after ident");
-                    if (auto node_expr = parser_expr()) {
-                        tryConsume(TokenType::semi, "Expected ';' after declaration");
-                            auto node_stmnt_let = m_allocator.alloc<NodeStmntLet>();
-                            node_stmnt_let->ident = ident.value();
-                            node_stmnt_let->expr = node_expr.value();
-
-                            node_stmnt->var = node_stmnt_let;
-                            return node_stmnt;
-                        
-                    } else {
-                        std::cerr << "Invalid expression after '='" << std::endl;
-                        exit(EXIT_FAILURE);
-                    }} 
-        else if (tryConsume(TokenType::_return).has_value()) {
-            auto node_stmnt_exit = m_allocator.alloc<NodeStmntExit>();
-
-            if (tryConsume(TokenType::openParen).has_value()) {
-                if (auto node_expr = parser_expr()) {
-                    node_stmnt_exit->expr = node_expr.value();
-                } else {
-                    std::cerr << "Invalid expression after '(' for return statement" << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-                tryConsume(TokenType::closeParen, "Expected ')' after return statement");
-            }
-            else {
-                if (auto node_expr = parser_expr()) {
-                    node_stmnt_exit->expr = node_expr.value();
-                } else {
-                    std::cerr << "Invalid expression for return statement" << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-            }
-            tryConsume(TokenType::semi, "Expected ';' after return statement");
-            node_stmnt->var = node_stmnt_exit;
-            return node_stmnt;
-        } else if (tryConsume(TokenType::_if).has_value()) {
-            auto node_if = m_allocator.alloc<NodeIf>();
-            tryConsume(TokenType::openParen, "Expected '('");
-
-            if (auto node_cond = parse_cond()) {
-                tryConsume(TokenType::closeParen, "Expected ')'");
-                node_if->cond = node_cond.value();
-                tryConsume(TokenType::openCurly, "Expected '{'");
-
-                NodeStmntScope* stmntsTrue = parseStmnts().value();
-                
-                tryConsume(TokenType::closeCurly, "Expected '}'");
-                tryConsume(TokenType::_else, "Expected else");
-                tryConsume(TokenType::openCurly, "Expected '{'");
-                NodeStmntScope* stmntsFalse = parseStmnts().value();
-        
-                tryConsume(TokenType::closeCurly, "Expected '}'");
-
-                node_if->trueStmnts = m_allocator.alloc<NodeStmntScope>();
-                node_if->trueStmnts->stmnts = std::move(stmntsTrue->stmnts);
-
-                node_if->falseStmnts = m_allocator.alloc<NodeStmntScope>();
-                node_if->falseStmnts->stmnts = std::move(stmntsFalse->stmnts);
-
-        node_stmnt->var = node_if;
-        return node_stmnt;
-    } else {
-        std::cerr << "Invalid expression after '(' for conditional statement." << std::endl;
-        exit(EXIT_FAILURE);
-    }
-}
-
 std::optional<NodeStmntScope*> parseStmnts() {
     auto stmntBlock = m_allocator.alloc<NodeStmntScope>();
 
@@ -452,6 +379,78 @@ std::optional<NodeStmnt*> parse_for_statement() {
   
 }
 
+std::optional<NodeStmnt*> parse_let_statement() {
+    if (tryConsume(TokenType::let).has_value()) {
+        auto ident = tryConsume(TokenType::ident, "Expected Identifier after let");
+        tryConsume(TokenType::eq, "Expected '=' after ident");
+        if (auto node_expr = parser_expr()) {
+            tryConsume(TokenType::semi, "Expected ';' after declaration");
+            auto node_stmnt_let = m_allocator.alloc<NodeStmntLet>();
+            node_stmnt_let->ident = ident.value();
+            node_stmnt_let->expr = node_expr.value();
+            auto node_stmnt = m_allocator.alloc<NodeStmnt>();
+            node_stmnt->var = node_stmnt_let;
+            return node_stmnt;
+        } else {
+            std::cerr << "Invalid expression after '='" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    }
+    return {};
+}
+
+std::optional<NodeStmnt*> parse_return_statement() {
+    if (tryConsume(TokenType::_return).has_value()) {
+        auto node_stmnt_exit = m_allocator.alloc<NodeStmntExit>();
+        if (tryConsume(TokenType::openParen).has_value()) {
+            if (auto node_expr = parser_expr()) {
+                node_stmnt_exit->expr = node_expr.value();
+            } else {
+                std::cerr << "Invalid expression after '(' for return statement" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            tryConsume(TokenType::closeParen, "Expected ')' after return statement");
+        } else {
+            if (auto node_expr = parser_expr()) {
+                node_stmnt_exit->expr = node_expr.value();
+            } else {
+                std::cerr << "Invalid expression for return statement" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+        }
+        tryConsume(TokenType::semi, "Expected ';' after return statement");
+        auto node_stmnt = m_allocator.alloc<NodeStmnt>();
+        node_stmnt->var = node_stmnt_exit;
+        return node_stmnt;
+    }
+    return {};
+}
+
+std::optional<NodeStmnt*> parse_if_statement() {
+    if (tryConsume(TokenType::_if).has_value()) {
+        auto node_if = m_allocator.alloc<NodeIf>();
+        tryConsume(TokenType::openParen, "Expected '('");
+        if (auto node_cond = parse_cond()) {
+            tryConsume(TokenType::closeParen, "Expected ')'");
+            node_if->cond = node_cond.value();
+            auto trueStmnts = parse_block_statement().value();
+            auto falseStmnts = m_allocator.alloc<NodeStmnt>();
+            if (tryConsume(TokenType::_else).has_value()) {
+                falseStmnts = parse_block_statement().value();
+            }
+            node_if->trueStmnts = trueStmnts;
+            node_if->falseStmnts = falseStmnts;
+            auto node_stmnt = m_allocator.alloc<NodeStmnt>();
+            node_stmnt->var = node_if;
+            return node_stmnt;
+        } else {
+            std::cerr << "Invalid expression after '(' for conditional statement." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    }
+    return {};
+}
+
 std::optional<NodeStmnt*> parse_stmnt() {
     if (auto let_stmnt = parse_let_statement()) {
         return let_stmnt;
@@ -463,13 +462,11 @@ std::optional<NodeStmnt*> parse_stmnt() {
         return block_stmnt;
     } else if (auto assignment_stmnt = parse_assignment_statement()) {
         return assignment_stmnt;
-    } else if(auto for_stmnt = parse_for_statement()){
+    } else if (auto for_stmnt = parse_for_statement()) {
         return for_stmnt;
-    } else if(auto comment = parse_comment()){
+    } else if (auto comment = parse_comment()) {
         return comment;
     }
-    
-    
     return {};
 }
 

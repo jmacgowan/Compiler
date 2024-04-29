@@ -56,127 +56,136 @@ class Tokenizer {
 public:
     Tokenizer(const std::string& src) : m_src(src) {}
 
-    std::vector<Token> tokenize() {
-        std::vector<Token> tokens;
-        std::string buf;
+std::vector<Token> tokenize() {
+    std::vector<Token> tokens;
+    std::string buf;
 
-        while (peek().has_value()) {
-            switch (peek().value()) {
-                case ';':
+    while (peek().has_value()) {
+        switch (peek().value()) {
+            case ';':
+                consume();
+                tokens.push_back({TokenType::semi});
+                break;
+            case '(':
+                consume();
+                tokens.push_back({TokenType::openParen});
+                break;
+            case ')':
+                consume();
+                tokens.push_back({TokenType::closeParen});
+                break;
+            case '=':
+                consume();
+                tokens.push_back({TokenType::eq});
+                break;
+            case '*':
+                if (peek(1) == '/') {
                     consume();
-                    tokens.push_back({TokenType::semi});
-                    break;
-                case '(':
-                    consume();
-                    tokens.push_back({TokenType::openParen});
-                    break;
-                case ')':
-                    consume();
-                    tokens.push_back({TokenType::closeParen});
-                    break;
-                case '=':
-                    consume();
-                    tokens.push_back({TokenType::eq});
-                    break;
-                case '*':
-                    if (peek(1) == '/') {
-                        consume();
-                        consume();
-                        tokens.push_back({TokenType::comment_end});
-                        break;
-                    } else {
-                        consume();
-                        tokens.push_back({TokenType::multi});
-                        break;
-                    }
-                case '/':
-                    if (peek(1) == '*') {
-                        consume();
-                        consume();
-                        tokens.push_back({TokenType::comment_start});
-                        break;
-                    } else {
-                        consume();
-                        tokens.push_back({TokenType::divide});
-                        break;
-                    }
-                case '+':
-                    consume();
-                    tokens.push_back({TokenType::plus});
-                    break;
-                case '-':
-                    consume();
-                    tokens.push_back({TokenType::minus});
-                    break;
-                case '<':
-                    consume();
-                    tokens.push_back({TokenType::lt});
-                    break;
-                case '>':
-                    consume();
-                    tokens.push_back({TokenType::gt});
-                    break;
-                case '{':
-                    consume();
-                    tokens.push_back({TokenType::openCurly});
-                    break;
-                case '}':
-                    consume();
-                    tokens.push_back({TokenType::closeCurly});
-                    break;
-                case '#':
-                    consume();
-                    tokens.push_back({TokenType::comment_start});
-                    break;
-                case '~':
                     consume();
                     tokens.push_back({TokenType::comment_end});
                     break;
-                default:
-                    if (std::isdigit(peek().value())) {
-                        buf.push_back(consume());
-                        while (peek().has_value() && std::isdigit(peek().value())) {
-                            buf.push_back(consume());
+                } else {
+                    consume();
+                    tokens.push_back({TokenType::multi});
+                    break;
+                }
+            case '/':
+                if (peek(1) == '*') {
+                    consume();
+                    consume();
+                    tokens.push_back({TokenType::comment_start});
+                    while (peek() != '*' || peek(1) != '/') {
+                        if (!peek().has_value()) {
+                            std::cerr << "Unterminated comment" << std::endl;
+                            exit(EXIT_FAILURE);
                         }
-                        tokens.push_back({.type = TokenType::_int_lit, .value = buf});
-                        buf.clear();
-                    } else if (std::isalpha(peek().value())) {
-                        buf.push_back(consume());
-                        while (peek().has_value() && (std::isalnum(peek().value()) || peek().value() == '_')) {
-                            buf.push_back(consume());
-                        }
-
-                        if (buf == "return") {
-                            tokens.push_back({.type = TokenType::_return});
-                        } else if (buf == "let") {
-                            tokens.push_back({.type = TokenType::let});
-                        } else if (buf == "for") {
-                            tokens.push_back({.type = TokenType::_for});
-                        } else if (buf == "if") {
-                            tokens.push_back({.type = TokenType::_if});
-                        } else if (buf == "else") {
-                            tokens.push_back({.type = TokenType::_else});
-                        } else if (buf == "==") {
-                            tokens.push_back({.type = TokenType::_equals});
-                        } else if (buf == "true") {
-                            tokens.push_back({.type = TokenType::_bool, .value = "true"});
-                        } else if (buf == "false") {
-                            tokens.push_back({.type = TokenType::_bool, .value = "false"});
-                        } else {
-                            tokens.push_back({.type = TokenType::ident, .value = buf});
-                        }
-                        buf.clear();
-                    } else if (std::isspace(peek().value())) {
                         consume();
-                    } else {
-                        // Invalid character
-                        std::cerr << "Invalid character: " << peek().value() << std::endl;
-                        exit(EXIT_FAILURE);
                     }
-            }
+                    consume();
+                    consume();
+                    break;
+                } else {
+                    consume();
+                    tokens.push_back({TokenType::divide});
+                    break;
+                }
+            case '+':
+                consume();
+                tokens.push_back({TokenType::plus});
+                break;
+            case '-':
+                consume();
+                tokens.push_back({TokenType::minus});
+                break;
+            case '<':
+                consume();
+                tokens.push_back({TokenType::lt});
+                break;
+            case '>':
+                consume();
+                tokens.push_back({TokenType::gt});
+                break;
+            case '{':
+                consume();
+                tokens.push_back({TokenType::openCurly});
+                break;
+            case '}':
+                consume();
+                tokens.push_back({TokenType::closeCurly});
+                break;
+            case '#':
+                consume();
+                tokens.push_back({TokenType::comment_start});
+                break;
+            case '~':
+                consume();
+                tokens.push_back({TokenType::comment_end});
+                break;
+            default:
+                if (std::isdigit(peek().value())) {
+                    buf.push_back(consume());
+                    while (peek().has_value() && std::isdigit(peek().value())) {
+                        buf.push_back(consume());
+                    }
+                    tokens.push_back({.type = TokenType::_int_lit, .value = buf});
+                    buf.clear();
+                } else if (std::isalpha(peek().value())) {
+                    buf.push_back(consume());
+                    while (peek().has_value() && (std::isalnum(peek().value()) || peek().value() == '_')) {
+                        buf.push_back(consume());
+                    }
+
+                    if (buf == "return") {
+                        tokens.push_back({.type = TokenType::_return});
+                    } else if (buf == "let") {
+                        tokens.push_back({.type = TokenType::let});
+                    } else if (buf == "for") {
+                        tokens.push_back({.type = TokenType::_for});
+                    } else if (buf == "if") {
+                        tokens.push_back({.type = TokenType::_if});
+                    } else if (buf == "else") {
+                        tokens.push_back({.type = TokenType::_else});
+                    } else if (buf == "==") {
+                        tokens.push_back({.type = TokenType::_equals});
+                    } else if (buf == "true") {
+                        tokens.push_back({.type = TokenType::_bool, .value = "true"});
+                    } else if (buf == "false") {
+                        tokens.push_back({.type = TokenType::_bool, .value = "false"});
+                    } else {
+                        tokens.push_back({.type = TokenType::ident, .value = buf});
+                    }
+                    buf.clear();
+                } else if (std::isspace(peek().value())) {
+                    consume();
+                } else {
+                    // Invalid character
+                    std::cerr << "Invalid character: " << peek().value() << std::endl;
+                    exit(EXIT_FAILURE);
+                }
         }
-        return tokens;
     }
+    return tokens;
+}
 
 private:
     std::optional<char> peek(int offset = 0) const {
