@@ -4,6 +4,7 @@ _start:
     push rax
     mov rax, 6
     push rax
+; yooo
     push QWORD [rsp + 0]
 
     mov rax, 60

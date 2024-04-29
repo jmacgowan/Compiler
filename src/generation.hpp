@@ -231,6 +231,10 @@ void gen_for(const NodeStmntFor* for_stmnt) {
                gen->gen_for(stmnt_for);
                 
             }
+            void operator()(const NodeComment* stmnt_comment) {
+                gen->m_output << "; " << stmnt_comment->string << "\n";
+            }
+
 
             };
 

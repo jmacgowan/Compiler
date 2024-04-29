@@ -362,18 +362,40 @@ std::optional<NodeStmntScope*> parseStmnts() {
 
     return stmntBlock;
 }
-std::optional<NodeStmntScope*> parse_comment() {
-    auto node_stmnt = m_allocator.alloc<NodeStmnt>();
-    auto if_token = tryConsume(TokenType::comment_start);
-    if (!if_token.has_value()) return {};
-    while (!tryConsume(TokenType::comment_end))
-    {
-        
+std::optional<NodeStmnt*> parse_comment() {
+    auto comment_start = tryConsume(TokenType::comment_start);
+    if (!comment_start.has_value()) {
+        return {};
     }
+    printf("eikfuhwfn");
     
+    std::string comment_text;
+    
+    while (true) {
+        auto token = peak();
+        if (!token.has_value()) {
+            std::cerr << "Expected comment end token" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        
+        if (token->type == TokenType::comment_end) {
+            consume(); // Consume the comment end token
+            break;
+        }
+        
+        comment_text += token->value.value();
+        consume(); // Consume the token
+    }
 
-    return {};
+    auto node_comment = m_allocator.alloc<NodeComment>();
+    node_comment->string = comment_text;
+
+    auto node_stmnt = m_allocator.alloc<NodeStmnt>();
+    node_stmnt->var = node_comment;
+
+    return node_stmnt;
 }
+
 
 std::optional<NodeStmnt*> parse_block_statement() {
     if (!tryConsume(TokenType::openCurly).has_value()) {
@@ -456,7 +478,7 @@ std::optional<NodeStmnt*> parse_stmnt() {
         return assignment_stmnt;
     } else if(auto for_stmnt = parse_for_statement()){
         return for_stmnt;
-    } else if(auto commment = parse_comment()){
+    } else if(auto comment = parse_comment()){
         return comment;
     }
     

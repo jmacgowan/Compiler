@@ -79,13 +79,27 @@ public:
                     tokens.push_back({TokenType::eq});
                     break;
                 case '*':
-                    consume();
-                    tokens.push_back({TokenType::multi});
-                    break;
+                    if (peek(1) == '/') {
+                        consume();
+                        consume();
+                        tokens.push_back({TokenType::comment_end});
+                        break;
+                    } else {
+                        consume();
+                        tokens.push_back({TokenType::multi});
+                        break;
+                    }
                 case '/':
-                    consume();
-                    tokens.push_back({TokenType::divide});
-                    break;
+                    if (peek(1) == '*') {
+                        consume();
+                        consume();
+                        tokens.push_back({TokenType::comment_start});
+                        break;
+                    } else {
+                        consume();
+                        tokens.push_back({TokenType::divide});
+                        break;
+                    }
                 case '+':
                     consume();
                     tokens.push_back({TokenType::plus});
@@ -110,7 +124,14 @@ public:
                     consume();
                     tokens.push_back({TokenType::closeCurly});
                     break;
-                
+                case '#':
+                    consume();
+                    tokens.push_back({TokenType::comment_start});
+                    break;
+                case '~':
+                    consume();
+                    tokens.push_back({TokenType::comment_end});
+                    break;
                 default:
                     if (std::isdigit(peek().value())) {
                         buf.push_back(consume());
@@ -129,22 +150,18 @@ public:
                             tokens.push_back({.type = TokenType::_return});
                         } else if (buf == "let") {
                             tokens.push_back({.type = TokenType::let});
-                        }  else if (buf == "for") {
+                        } else if (buf == "for") {
                             tokens.push_back({.type = TokenType::_for});
-                        }  else if (buf == "if") {
+                        } else if (buf == "if") {
                             tokens.push_back({.type = TokenType::_if});
-                        }  else if (buf == "else") {
-                            tokens.push_back({.type = TokenType::_else});}  
-                        else if (buf == "==") {
-                            tokens.push_back({.type = TokenType::_equals});}  
-                        else if (buf == "true") {
-                            tokens.push_back({.type = TokenType::_bool, .value = "true"});}  
-                        else if (buf == "false") {
-                            tokens.push_back({.type = TokenType::_bool, .value = "false"}); 
-                        }else if (buf == "/*") {
-                            tokens.push_back({.type = TokenType::comment_start}); 
-                        }else if (buf == "*/") {
-                            tokens.push_back({.type = TokenType::comment_end}); 
+                        } else if (buf == "else") {
+                            tokens.push_back({.type = TokenType::_else});
+                        } else if (buf == "==") {
+                            tokens.push_back({.type = TokenType::_equals});
+                        } else if (buf == "true") {
+                            tokens.push_back({.type = TokenType::_bool, .value = "true"});
+                        } else if (buf == "false") {
+                            tokens.push_back({.type = TokenType::_bool, .value = "false"});
                         } else {
                             tokens.push_back({.type = TokenType::ident, .value = buf});
                         }
