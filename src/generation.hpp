@@ -135,17 +135,18 @@ void gen_cond(const NodeCond* cond){
 }
 
 void gen_if(const NodeIf* if_stmt) {
-    // Generate code for the condition
     gen_cond(if_stmt->cond);
 
-    // Generate code for the true branch
-    gen_prog(if_stmt->trueExpr);
+    for (const auto& stmnt : if_stmt->trueStmnts->stmnts) {
+        gen_stmnt(stmnt);
+    }
 
-    // If there's a false branch, generate code for it
-    if (if_stmt->falseExpr) {
-        m_output << "    jmp if_end\n"; // Jump to the end of the if statement after executing the true branch
+    if (!if_stmt->falseStmnts->stmnts.empty()) {
+        m_output << "    jmp if_end\n"; 
         m_output << "condition_end:\n";
-        gen_prog(if_stmt->falseExpr);
+        for (const auto& stmnt : if_stmt->falseStmnts->stmnts) {
+            gen_stmnt(stmnt);
+        }
     }
 
     m_output << "if_end:\n";

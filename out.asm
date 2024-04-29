@@ -10,18 +10,29 @@ _start:
     jg condition_true
     jmp condition_end
 condition_true:
-    mov rax, 6
+    mov rax, 5
     push rax
+    mov rax, 4
+    push rax
+    mov rax, 7
+    push rax
+    pop rax
+    pop rbx
+    imul rax, rbx
+    push rax
+    mov rax, 60
+    pop rdi
+    syscall
     jmp if_end
 condition_end:
-    mov rax, 5
+    mov rax, 4
     push rax
     mov rax, 60
     pop rdi
     syscall
 if_end:
-    push QWORD [rsp + 0]
-
+    mov rax, 8
+    push rax
     mov rax, 60
     pop rdi
     syscall
