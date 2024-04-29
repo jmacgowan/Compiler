@@ -1,17 +1,9 @@
-
-if (32>5) {
-    let x = 5;
-    let y = 6;
-    } else {
-        return 4;
-        }
-
-if (32>5) {
-    return 3;
-    } else {
-        return 8;
-        }
+let c = 6;
 {
-    return 11;
+    let z = 121;
 }
-return 8;
+let y = 0;
+{
+    let h = 5;
+}
+return z;

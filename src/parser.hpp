@@ -81,6 +81,12 @@
         NodeExpr* expr;
     };
 
+    struct NodeStmntUpdate
+    {
+        Token ident;
+        NodeExpr* expr;
+    };
+
     struct NodeStmntScope
     {
         std::vector<NodeStmnt*> stmnts;
@@ -95,7 +101,7 @@
 
     struct NodeStmnt
     {
-        std::variant<NodeStmntExit*, NodeStmntLet*, NodeIf*, NodeStmntScope*> var;
+        std::variant<NodeStmntExit*, NodeStmntLet*, NodeIf*, NodeStmntScope*, NodeStmntUpdate*> var;
     };
 
     struct NodeProg
@@ -249,6 +255,7 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
 
 
     std::optional<NodeStmnt*> parse_stmnt() {
+        auto node_stmnt = m_allocator.alloc<NodeStmnt>();
         if (tryConsume(TokenType::let).has_value()) {
             auto ident = tryConsume(TokenType::ident, "Expected Identifier after let"); 
                 tryConsume(TokenType::eq, "Expected '=' after ident");
@@ -258,7 +265,6 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
                             node_stmnt_let->ident = ident.value();
                             node_stmnt_let->expr = node_expr.value();
 
-                            auto node_stmnt = m_allocator.alloc<NodeStmnt>();
                             node_stmnt->var = node_stmnt_let;
                             return node_stmnt;
                         
@@ -287,7 +293,6 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
                 }
             }
             tryConsume(TokenType::semi, "Expected ';' after return statement");
-            auto node_stmnt = m_allocator.alloc<NodeStmnt>();
             node_stmnt->var = node_stmnt_exit;
             return node_stmnt;
         } else if (tryConsume(TokenType::_if).has_value()) {
@@ -314,7 +319,6 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
                 node_if->falseStmnts = m_allocator.alloc<NodeStmntScope>();
                 node_if->falseStmnts->stmnts = std::move(stmntsFalse->stmnts);
 
-                auto node_stmnt = m_allocator.alloc<NodeStmnt>();
                 node_stmnt->var = node_if;
                 return node_stmnt;
             } else {
@@ -322,12 +326,28 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
                 exit(EXIT_FAILURE);
                 }
             } else if (tryConsume(TokenType::openCurly).has_value()) {
-                auto node_stmnt = m_allocator.alloc<NodeStmnt>();
                 NodeStmntScope* stmnts = parseStmnts().value();
-                node_stmnt->var = stmnts;
+                node_stmnt->var = stmnts;      
                 tryConsume(TokenType::closeCurly, "Expected '}'");
                 return node_stmnt;
-            } 
+            } else {
+                auto ident = tryConsume(TokenType::ident);
+                if (ident.has_value()){    
+                tryConsume(TokenType::eq, "Expected '=' after ident");
+                    if (auto node_expr = parser_expr()) {
+                        tryConsume(TokenType::semi, "Expected ';' after expression");
+                            auto node_stmnt_update = m_allocator.alloc<NodeStmntUpdate>();
+                            node_stmnt_update->ident = ident.value();
+                            node_stmnt_update->expr = node_expr.value();
+                            node_stmnt->var = node_stmnt_update;
+                            return node_stmnt;   
+                    } else {
+                        std::cerr << "Invalid expression after '='" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                } 
+            }
+            
         return {};
     }
 

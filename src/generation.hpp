@@ -1,7 +1,7 @@
 #pragma once
 #include <variant>
 #include <string>
-#include <sstream> // Needed for std::stringstream
+#include <sstream> 
 #include <vector>
 #include <map>
 #include <cassert>
@@ -158,7 +158,6 @@ void gen_if(const NodeIf* if_stmt) {
         struct StmntVisitor {
             Generator* gen;
 
-            
             void operator()(const NodeStmntScope* stmnts) {
             
                 gen->begin_scope();
@@ -189,12 +188,27 @@ void gen_if(const NodeIf* if_stmt) {
             gen -> gen_expr(stmnt_let->expr);
     
             }
+                    
+            void operator()(const NodeStmntUpdate* stmnt_update) {
+                auto it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(), [&](const Var& var) {
+                    return var.name == stmnt_update->ident.value.value();
+                });
+                if (it == gen->m_vars.end()) {
+                    std::cerr << "Unknown Identifier: " << stmnt_update->ident.value.value() << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                gen->gen_expr(stmnt_update->expr);
+                std::stringstream offset;
+                offset << 8 * (gen->m_stack_size - (*it).stack_loc - 1);
+                gen->m_output << "    pop rax\n"; // New value
+                gen->m_output << "    mov QWORD [rsp + " << offset.str() << "], rax\n"; // Assign to variable
+            }
+            
             void operator()(const NodeIf* stmnt_if) {
-
+                
                 gen->gen_if(stmnt_if);
             }
-
-        };
+            };
 
         StmntVisitor visitor{this};
         std::visit(visitor, stmnt->var);
@@ -228,7 +242,15 @@ private:
     }
 
     void end_scope(){
-
+        size_t pop_count = m_vars.size() - m_scopes.back();
+        m_output << "    add rsp," << pop_count * 8 << "\n";
+        m_stack_size -= pop_count;
+        for (int i = 0; i < pop_count; i++)
+        {
+            m_vars.pop_back();
+        }
+        m_scopes.pop_back();
+        
     }
 
     struct Var
