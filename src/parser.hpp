@@ -110,6 +110,7 @@
         NodeCond* cond;
         NodeStmnt* trueStmnts;
         NodeStmnt* falseStmnts;
+        NodeStmnt* elifs;
     };
 
     struct NodeStmnt
@@ -430,9 +431,29 @@ std::optional<NodeStmnt*> parse_if_statement() {
             node_if->cond = node_cond.value();
             auto trueStmnts = parse_block_statement().value();
             auto falseStmnts = m_allocator.alloc<NodeStmnt>();
+
+            // Check for elif statements
+            while (tryConsume(TokenType::_elif).has_value()) {
+                auto elif_cond = parse_cond();
+                if (!elif_cond) {
+                    std::cerr << "Invalid expression after '(' for conditional statement." << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                tryConsume(TokenType::closeParen, "Expected ')'");
+                auto elif_true_stmnts = parse_block_statement().value();
+                auto elif_false_stmnts = m_allocator.alloc<NodeStmnt>();
+                auto elif_node_if = m_allocator.alloc<NodeIf>();
+                elif_node_if->cond = elif_cond.value();
+                elif_node_if->trueStmnts = elif_true_stmnts;
+                elif_node_if->falseStmnts = elif_false_stmnts;
+                falseStmnts = m_allocator.alloc<NodeStmnt>();
+                falseStmnts->var = elif_node_if;
+            }
+
             if (tryConsume(TokenType::_else).has_value()) {
                 falseStmnts = parse_block_statement().value();
             }
+
             node_if->trueStmnts = trueStmnts;
             node_if->falseStmnts = falseStmnts;
             auto node_stmnt = m_allocator.alloc<NodeStmnt>();

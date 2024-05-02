@@ -19,6 +19,7 @@ enum class TokenType {
     multi,
     divide,
     _if,
+    _elif,
     _else,
     _bool,
     gt,
@@ -165,6 +166,8 @@ std::vector<Token> tokenize() {
                         tokens.push_back({.type = TokenType::_if});
                     } else if (buf == "else") {
                         tokens.push_back({.type = TokenType::_else});
+                    }else if (buf == "elif") {
+                        tokens.push_back({.type = TokenType::_elif});
                     } else if (buf == "==") {
                         tokens.push_back({.type = TokenType::_equals});
                     } else if (buf == "true") {
