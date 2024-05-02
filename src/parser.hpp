@@ -76,7 +76,7 @@
         NodeStmnt* expr;
         NodeCond* cond;
         NodeStmnt* update;
-        NodeStmntScope* stmnts;
+        NodeStmnt* stmnts;
 
     };
 
@@ -281,10 +281,8 @@ std::optional<NodeStmnt*> parse_comment() {
     if (!comment_start.has_value()) {
         return {};
     }
-    printf("eikfuhwfn");
     
     std::string comment_text;
-    
     while (true) {
         auto token = peak();
         if (!token.has_value()) {
@@ -309,7 +307,6 @@ std::optional<NodeStmnt*> parse_comment() {
 
     return node_stmnt;
 }
-
 
 std::optional<NodeStmnt*> parse_block_statement() {
     if (!tryConsume(TokenType::openCurly).has_value()) {
@@ -354,7 +351,7 @@ std::optional<NodeStmnt*> parse_for_statement() {
         exit(EXIT_FAILURE);
     } 
     auto node_cond = parse_cond();
-    if (!node_expr) {
+    if (!node_cond) {
         std::cerr << "Invalid condition" << std::endl;
         exit(EXIT_FAILURE);
     } 
@@ -365,9 +362,7 @@ std::optional<NodeStmnt*> parse_for_statement() {
         exit(EXIT_FAILURE);
     } 
     tryConsume(TokenType::closeParen, "Expected ')' after final expression");
-    tryConsume(TokenType::openCurly, "Expected statement block");
-    auto node_block = parseStmnts();
-    tryConsume(TokenType::closeCurly, "Expected '}' to close block");
+    auto node_block = parse_block_statement();
     auto node_stmnt_for = m_allocator.alloc<NodeStmntFor>();
     node_stmnt_for->cond = node_cond.value();
     node_stmnt_for->expr = node_expr.value();

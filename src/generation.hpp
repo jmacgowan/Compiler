@@ -6,6 +6,7 @@
 #include <map>
 #include <cassert>
 #include <algorithm>
+#include <ranges>
 
 class Generator {
 public:
@@ -179,29 +180,79 @@ void gen_if(const NodeIf* if_stmt) {
             }
                     
             void operator()(const NodeStmntUpdate* stmnt_update) {
-                auto it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(), [&](const Var& var) {
-                    return var.name == stmnt_update->ident.value.value();
-                });
-                if (it == gen->m_vars.end()) {
-                    std::cerr << "Unknown Identifier: " << stmnt_update->ident.value.value() << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-                gen->gen_expr(stmnt_update->expr);
-                std::stringstream offset;
-                offset << 8 * (gen->m_stack_size - (*it).stack_loc - 1);
-                gen->m_output << "    pop rax\n"; // New value
-                gen->m_output << "    mov QWORD [rsp + " << offset.str() << "], rax\n"; // Assign to variable
+            auto it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(), [&](const Var& var) {
+                return var.name == stmnt_update->ident.value.value();
+            });
+            if (it == gen->m_vars.end()) {
+                std::cerr << "Unknown Identifier: " << stmnt_update->ident.value.value() << std::endl;
+                exit(EXIT_FAILURE);
             }
+            gen->gen_expr(stmnt_update->expr);
+            gen->pop("rax");
+            gen->m_output << "    mov[rsp + " << (gen->m_stack_size - it->stack_loc - 1) *8 << "], rax\n";
+            
+             }
             
             void operator()(const NodeIf* stmnt_if) {
-                
                 gen->gen_if(stmnt_if);
             }
             
-            void operator()(const NodeStmntFor* stmnt_for) {
-                assert(false);
+void operator()(const NodeStmntFor* stmnt_for) {
+    // Increment the label count for uniqueness
+    gen->m_if_label_count++;
 
-            }
+    // Define labels for the loop and condition
+    std::string condition_true_label = "condition_true_" + std::to_string(gen->m_if_label_count);
+    std::string condition_end_label = "condition_end_" + std::to_string(gen->m_if_label_count);
+    std::string loop_start_label = "loop_start_" + std::to_string(gen->m_if_label_count);
+
+    // Generate code for initialization
+    if (stmnt_for->expr) {
+        gen->gen_stmnt(stmnt_for->expr);
+    }
+
+    // Label for the beginning of the loop
+    gen->m_output << loop_start_label << ":\n";
+
+    // Generate code for condition checking
+    if (stmnt_for->cond) {
+        gen->gen_expr(stmnt_for->cond->var->expr1);
+        gen->gen_expr(stmnt_for->cond->var->expr2);
+        gen->m_output << "    pop rax\n"; 
+        gen->m_output << "    pop rbx\n"; 
+
+        // Compare the values
+        gen->m_output << "    cmp rbx, rax\n";
+
+        // Jump to the end of the loop if the condition is false
+        if (stmnt_for->cond->var->bool1.type == TokenType::lt) {
+            gen->m_output << "    jge " << condition_end_label << "\n"; 
+        } else if (stmnt_for->cond->var->bool1.type == TokenType::gt) {
+            gen->m_output << "    jle " << condition_end_label << "\n";
+        } else if (stmnt_for->cond->var->bool1.type == TokenType::_equals) {
+            gen->m_output << "    jne " << condition_end_label << "\n";
+        }
+    }
+
+    // Label for the true condition
+    gen->m_output << condition_true_label << ":\n";
+
+    // Generate code for the loop body
+    if (stmnt_for->stmnts) {
+        gen->gen_stmnt(stmnt_for->stmnts);
+    }
+
+    // Generate code for the update expression
+    if (stmnt_for->update) {
+        gen->gen_stmnt(stmnt_for->update);
+    }
+
+    // Jump back to the beginning of the loop
+    gen->m_output << "    jmp " << loop_start_label << "\n";
+
+    // Label for the end of the loop
+    gen->m_output << condition_end_label << ":\n";
+}
             void operator()(const NodeComment* stmnt_comment) {
                 gen->m_output << "; " << stmnt_comment->string << "\n";
             }

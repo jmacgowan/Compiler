@@ -79,8 +79,8 @@ std::vector<Token> tokenize() {
                 tokens.push_back({TokenType::eq});
                 break;
             case '*':
-                if (peek(1) == '/') {
-                    consume();
+                consume();
+                if (peek() == '/') {
                     consume();
                     tokens.push_back({TokenType::comment_end});
                     break;
@@ -90,8 +90,8 @@ std::vector<Token> tokenize() {
                     break;
                 }
             case '/':
-                if (peek(1) == '*') {
-                    consume();
+            consume();
+                if (peek() == '*') {
                     consume();
                     tokens.push_back({TokenType::comment_start});
                     while (peek() != '*' || peek(1) != '/') {
