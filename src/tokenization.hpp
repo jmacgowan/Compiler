@@ -181,12 +181,13 @@ std::vector<Token> tokenize() {
                         tokens.push_back({.type = TokenType::ident, .line = line_count, .value = buf});
                     }
                     buf.clear();
+                } 
+                else if (peek().value() == '\n') {
+                    line_count++;
+                    consume();
                 } else if (std::isspace(peek().value())) {
                     consume();}
-                else if (peek().value() == '\n') {
-                    tokens.push_back({.type = TokenType::_newline, .line = line_count});
-                    consume();
-                } else {
+                    else {
                     // Invalid character
                     std::cerr << "Invalid character: " << peek().value() << std::endl;
                     exit(EXIT_FAILURE);
