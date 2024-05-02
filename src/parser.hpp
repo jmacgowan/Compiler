@@ -110,7 +110,6 @@
         NodeCond* cond;
         NodeStmnt* trueStmnts;
         NodeStmnt* falseStmnts;
-        NodeStmnt* elifs;
     };
 
     struct NodeStmnt
@@ -127,7 +126,12 @@ class Parser {
 public:
     inline explicit Parser(std::vector<Token> tokens)
         : m_tokens(std::move(tokens)),
-        m_allocator(1024 * 1024 * 8) {}
+        m_allocator(1024 * 1024 * 8) {};
+
+    void error_expected(const std::string& err, const int line){
+        std::cerr<< "[Parsing Error] " << err << " On line " << line << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
     std::optional<NodeTerm*> parse_term() {
         if (auto int_lit = tryConsume(TokenType::_int_lit)) {
@@ -221,7 +225,7 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
             break;
            }
            
-        Token op = consume();
+        auto [type, line ,value] = consume();
         int prec_new_val = prec.value() + 1;
         auto expr_rhs = parser_expr(prec_new_val);
 
@@ -232,28 +236,28 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
         }
         auto expr = m_allocator.alloc<BinExpr>();
         auto expr_lhs2 = m_allocator.alloc<NodeExpr>();
-        if (op.type == TokenType::plus) {
+        if (type == TokenType::plus) {
             auto bin_expr_add = m_allocator.alloc<BinExprAdd>();
             expr_lhs2->var = expr_lhs->var; 
             bin_expr_add->lhs = expr_lhs2;
             bin_expr_add->rhs = expr_rhs.value();
             expr->var = bin_expr_add;
         } 
-        else if (op.type == TokenType::minus) {
+        else if (type == TokenType::minus) {
             auto bin_expr_minus = m_allocator.alloc<BinExprSub>();
             expr_lhs2->var = expr_lhs->var; 
             bin_expr_minus->lhs = expr_lhs2;
             bin_expr_minus->rhs = expr_rhs.value();
             expr->var = bin_expr_minus;
             }
-        else if (op.type == TokenType::multi) {
+        else if (type == TokenType::multi) {
             auto bin_expr_multi = m_allocator.alloc<BinExprMulti>();
             expr_lhs2->var = expr_lhs->var; 
             bin_expr_multi->lhs = expr_lhs2;
             bin_expr_multi->rhs = expr_rhs.value();
             expr->var = bin_expr_multi;
             } 
-        else if (op.type == TokenType::divide) {
+        else if (type == TokenType::divide) {
             auto bin_expr_divide = m_allocator.alloc<BinExprDiv>();
             expr_lhs2->var = expr_lhs->var; 
             bin_expr_divide->lhs = expr_lhs2;
@@ -431,24 +435,6 @@ std::optional<NodeStmnt*> parse_if_statement() {
             node_if->cond = node_cond.value();
             auto trueStmnts = parse_block_statement().value();
             auto falseStmnts = m_allocator.alloc<NodeStmnt>();
-
-            // Check for elif statements
-            while (tryConsume(TokenType::_elif).has_value()) {
-                auto elif_cond = parse_cond();
-                if (!elif_cond) {
-                    std::cerr << "Invalid expression after '(' for conditional statement." << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-                tryConsume(TokenType::closeParen, "Expected ')'");
-                auto elif_true_stmnts = parse_block_statement().value();
-                auto elif_false_stmnts = m_allocator.alloc<NodeStmnt>();
-                auto elif_node_if = m_allocator.alloc<NodeIf>();
-                elif_node_if->cond = elif_cond.value();
-                elif_node_if->trueStmnts = elif_true_stmnts;
-                elif_node_if->falseStmnts = elif_false_stmnts;
-                falseStmnts = m_allocator.alloc<NodeStmnt>();
-                falseStmnts->var = elif_node_if;
-            }
 
             if (tryConsume(TokenType::_else).has_value()) {
                 falseStmnts = parse_block_statement().value();

@@ -29,13 +29,16 @@ enum class TokenType {
     closeCurly,
     _for,
     comment_start,
-    comment_end
+    comment_end,
+    _newline
 };
 
 
 struct Token {
     TokenType type;
+    int line;
     std::optional<std::string> value;
+
 };
 
 std::optional<int> bin_prec(TokenType type){
@@ -60,41 +63,41 @@ public:
 std::vector<Token> tokenize() {
     std::vector<Token> tokens;
     std::string buf;
-
+    int line_count = 0;
     while (peek().has_value()) {
         switch (peek().value()) {
             case ';':
                 consume();
-                tokens.push_back({TokenType::semi});
+                tokens.push_back({TokenType::semi, line_count});
                 break;
             case '(':
                 consume();
-                tokens.push_back({TokenType::openParen});
+                tokens.push_back({TokenType::openParen,line_count});
                 break;
             case ')':
                 consume();
-                tokens.push_back({TokenType::closeParen});
+                tokens.push_back({TokenType::closeParen, line_count});
                 break;
             case '=':
                 consume();
-                tokens.push_back({TokenType::eq});
-                break;
+                tokens.push_back({TokenType::eq, line_count});
+                break; 
             case '*':
                 consume();
                 if (peek() == '/') {
                     consume();
-                    tokens.push_back({TokenType::comment_end});
+                    tokens.push_back({TokenType::comment_end, line_count});
                     break;
                 } else {
                     consume();
-                    tokens.push_back({TokenType::multi});
+                    tokens.push_back({TokenType::multi, line_count});
                     break;
                 }
             case '/':
             consume();
                 if (peek() == '*') {
                     consume();
-                    tokens.push_back({TokenType::comment_start});
+                    tokens.push_back({TokenType::comment_start, line_count});
                     while (peek() != '*' || peek(1) != '/') {
                         if (!peek().has_value()) {
                             std::cerr << "Unterminated comment" << std::endl;
@@ -107,40 +110,40 @@ std::vector<Token> tokenize() {
                     break;
                 } else {
                     consume();
-                    tokens.push_back({TokenType::divide});
+                    tokens.push_back({TokenType::divide, line_count});
                     break;
                 }
             case '+':
                 consume();
-                tokens.push_back({TokenType::plus});
+                tokens.push_back({TokenType::plus,line_count});
                 break;
             case '-':
                 consume();
-                tokens.push_back({TokenType::minus});
+                tokens.push_back({TokenType::minus,line_count});
                 break;
             case '<':
                 consume();
-                tokens.push_back({TokenType::lt});
+                tokens.push_back({TokenType::lt, line_count});
                 break;
             case '>':
                 consume();
-                tokens.push_back({TokenType::gt});
+                tokens.push_back({TokenType::gt, line_count});
                 break;
             case '{':
                 consume();
-                tokens.push_back({TokenType::openCurly});
+                tokens.push_back({TokenType::openCurly,  line_count});
                 break;
             case '}':
                 consume();
-                tokens.push_back({TokenType::closeCurly});
+                tokens.push_back({TokenType::closeCurly, line_count});
                 break;
             case '#':
                 consume();
-                tokens.push_back({TokenType::comment_start});
+                tokens.push_back({TokenType::comment_start,  line_count});
                 break;
             case '~':
                 consume();
-                tokens.push_back({TokenType::comment_end});
+                tokens.push_back({TokenType::comment_end,line_count});
                 break;
             default:
                 if (std::isdigit(peek().value())) {
@@ -148,7 +151,7 @@ std::vector<Token> tokenize() {
                     while (peek().has_value() && std::isdigit(peek().value())) {
                         buf.push_back(consume());
                     }
-                    tokens.push_back({.type = TokenType::_int_lit, .value = buf});
+                    tokens.push_back({.type = TokenType::_int_lit, .line = line_count, .value = buf});
                     buf.clear();
                 } else if (std::isalpha(peek().value())) {
                     buf.push_back(consume());
@@ -157,28 +160,31 @@ std::vector<Token> tokenize() {
                     }
 
                     if (buf == "return") {
-                        tokens.push_back({.type = TokenType::_return});
+                        tokens.push_back({.type = TokenType::_return, .line = line_count});
                     } else if (buf == "let") {
-                        tokens.push_back({.type = TokenType::let});
+                        tokens.push_back({.type = TokenType::let, .line = line_count});
                     } else if (buf == "for") {
-                        tokens.push_back({.type = TokenType::_for});
+                        tokens.push_back({.type = TokenType::_for, .line = line_count});
                     } else if (buf == "if") {
-                        tokens.push_back({.type = TokenType::_if});
+                        tokens.push_back({.type = TokenType::_if, .line = line_count});
                     } else if (buf == "else") {
-                        tokens.push_back({.type = TokenType::_else});
+                        tokens.push_back({.type = TokenType::_else, .line = line_count});
                     }else if (buf == "elif") {
-                        tokens.push_back({.type = TokenType::_elif});
+                        tokens.push_back({.type = TokenType::_elif, .line = line_count});
                     } else if (buf == "==") {
-                        tokens.push_back({.type = TokenType::_equals});
+                        tokens.push_back({.type = TokenType::_equals, .line = line_count});
                     } else if (buf == "true") {
-                        tokens.push_back({.type = TokenType::_bool, .value = "true"});
+                        tokens.push_back({.type = TokenType::_bool, .line = line_count, .value = "true"});
                     } else if (buf == "false") {
-                        tokens.push_back({.type = TokenType::_bool, .value = "false"});
+                        tokens.push_back({.type = TokenType::_bool, .line = line_count, .value = "false"});
                     } else {
-                        tokens.push_back({.type = TokenType::ident, .value = buf});
+                        tokens.push_back({.type = TokenType::ident, .line = line_count, .value = buf});
                     }
                     buf.clear();
                 } else if (std::isspace(peek().value())) {
+                    consume();}
+                else if (peek().value() == '\n') {
+                    tokens.push_back({.type = TokenType::_newline, .line = line_count});
                     consume();
                 } else {
                     // Invalid character
