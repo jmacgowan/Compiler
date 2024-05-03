@@ -134,8 +134,8 @@ void gen_cond(const NodeCond* cond, const std::string& condition_true_label, con
 
 void gen_if(const NodeIf* if_stmt) {
     m_if_label_count++;
-
-    std::string condition_true_label = "condition_true_" + std::to_string(m_if_label_count);
+    assert(false)
+;    std::string condition_true_label = "condition_true_" + std::to_string(m_if_label_count);
     std::string condition_end_label = "condition_end_" + std::to_string(m_if_label_count);
     std::string if_end_label = "if_end_" + std::to_string(m_if_label_count);
 

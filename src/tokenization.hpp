@@ -189,7 +189,7 @@ std::vector<Token> tokenize() {
                     consume();}
                     else {
                     // Invalid character
-                    std::cerr << "Invalid character: " << peek().value() << std::endl;
+                    std::cerr << "[Tokenisation Error] " << peek().value() << std::endl;
                     exit(EXIT_FAILURE);
                 }
         }

@@ -109,6 +109,8 @@
     {
         NodeCond* cond;
         NodeStmnt* trueStmnts;
+        std::vector<NodeStmnt*> elifStmnts; 
+        std::vector<NodeCond*> elifCond;
         NodeStmnt* falseStmnts;
     };
 
@@ -129,7 +131,7 @@ public:
         m_allocator(1024 * 1024 * 8) {};
 
     void error_expected(const std::string& err, const int line){
-        std::cerr<< "[Parsing Error] Expected '" << err << "' On line " << line+1 << std::endl;
+        std::cerr<< "[Parsing Error] Expected '" << err << "' on line " << line+1 << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -150,10 +152,9 @@ public:
             auto expr = parser_expr();
             if (!expr.has_value())
             {
-            std::cerr <<("Can't parse bracketed expression") << std::endl;
-            exit(EXIT_FAILURE);
+            error_expected("expression", ident.value().line);
             }
-            tryConsume(TokenType::closeParen, "Expected ')'", ident.value().line); 
+            tryConsume(TokenType::closeParen, ")", ident.value().line); 
             auto node_term = m_allocator.alloc<NodeTermParen>();
             node_term->expr = expr.value();
             auto term = m_allocator.alloc<NodeTerm>();
@@ -167,24 +168,16 @@ public:
 std::optional<NodeCond*> parse_cond(){
 
     auto node_cond = m_allocator.alloc<NodeBool>();
-    
     auto expr_lhs = parser_expr();
 
-    if (!expr_lhs.has_value())
-    {
-        std::cerr << "Expected expression" << std::endl;
-        exit(EXIT_FAILURE);
-    }
-    
     Token cond = consume();
     if (cond.type != TokenType::lt && cond.type != TokenType::gt && cond.type != TokenType::_equals) {
-        error_expected("expected conditional token", cond.line);
+        error_expected("conditional token", cond.line);
     }
 
     auto expr_rhs = parser_expr();
     if (!expr_rhs.has_value()) {
-        std::cerr << "Can't parse right-hand side expression" << std::endl;
-        exit(EXIT_FAILURE);
+        error_expected("rhs expression", cond.line);
     }
 
     node_cond->expr1 = expr_lhs.value();
@@ -230,8 +223,7 @@ std::optional<NodeExpr*> parser_expr(int max_prec = 0) {
 
         if (!expr_rhs.has_value())
         {
-            std::cerr <<("Can't parse") << std::endl;
-            exit(EXIT_FAILURE);
+            error_expected("rhs expression", line);
         }
         auto expr = m_allocator.alloc<BinExpr>();
         auto expr_lhs2 = m_allocator.alloc<NodeExpr>();
@@ -290,8 +282,7 @@ std::optional<NodeStmnt*> parse_comment() {
     while (true) {
         auto token = peak();
         if (!token.has_value()) {
-            std::cerr << "Expected comment end token" << std::endl;
-            exit(EXIT_FAILURE);
+            error_expected("end comment", token.value().line);
         }
         
         if (token->type == TokenType::comment_end) {
@@ -341,6 +332,7 @@ std::optional<NodeStmnt*> parse_assignment_statement() {
     } else {
         error_expected("expression", ident.value().line);
     }
+    return {};
 }
 
 std::optional<NodeStmnt*> parse_for_statement() {
@@ -432,6 +424,16 @@ std::optional<NodeStmnt*> parse_if_statement() {
             auto trueStmnts = parse_block_statement().value();
             auto falseStmnts = m_allocator.alloc<NodeStmnt>();
 
+            while (tryConsume(TokenType::_elif).has_value())
+            {
+                auto tk = peak();
+                tryConsume(TokenType::openParen, "(", tk.value().line);
+                if (auto elif_node_cond = parse_cond()) {
+                tryConsume(TokenType::closeParen, ")", tk.value().line);           
+                node_if->elifStmnts.push_back(parse_block_statement().value());
+                node_if->elifCond.push_back(elif_node_cond.value());
+            }}
+
             if (tryConsume(TokenType::_else).has_value()) {
                 falseStmnts = parse_block_statement().value();
             }
@@ -442,8 +444,7 @@ std::optional<NodeStmnt*> parse_if_statement() {
             node_stmnt->var = node_if;
             return node_stmnt;
         } else {
-            std::cerr << "Invalid expression after '(' for conditional statement." << std::endl;
-            exit(EXIT_FAILURE);
+            error_expected("expression", _if.value().line);
         }
     }
     return {};
